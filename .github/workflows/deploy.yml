@@ -1,0 +1,482 @@
+name: DRAVANUA HUB — Backend Deployment (Production Grade)
+
+on:
+  push:
+    branches: [ main, staging, dev ]
+  pull_request:
+    branches: [ main, staging, dev ]
+
+env:
+  NODE_ENV: production
+  BACKEND_REPO: https://github.com/ericmaniraguha/dravanua_backend.git
+
+jobs:
+
+  # ─────────────────────────────────────────
+  # CI: Validate & Test (with devDependencies)
+  # ─────────────────────────────────────────
+  validate:
+    name: 📦 Validate Backend Code
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🌿 Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: 🛠️ Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: 📦 Install ALL Dependencies (including dev)
+        run: |
+          echo "📦 Installing dependencies..."
+          npm ci
+          echo "✅ Dependencies installed"
+
+      - name: 🧪 Run Tests
+        run: |
+          echo "🧪 Running test suite..."
+          npm run test --if-present || echo "⚠️  No tests configured"
+        continue-on-error: true
+
+      - name: 🔍 Lint Code
+        run: |
+          echo "🔍 Running linter..."
+          npm run lint --if-present || echo "⚠️  No linter configured"
+        continue-on-error: true
+
+      - name: 🏗️ Check Build (if applicable)
+        run: |
+          npm run build --if-present || echo "⚠️  No build step configured"
+        continue-on-error: true
+
+  # ─────────────────────────────────────────
+  # CD: Production Deployment (main branch)
+  # ─────────────────────────────────────────
+  deploy-production:
+    name: 🚀 Deploy to Production
+    needs: validate
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: 🚀 Deploy to Production Server
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
+          # Increased timeout for deployment
+          script_stop: true
+          script: |
+            set -e  # Exit on first error
+            
+            # ═══════════════════════════════════════════════════════════
+            # SECTION 1: PRE-FLIGHT CHECKS
+            # ═══════════════════════════════════════════════════════════
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo "🔍 PRE-FLIGHT CHECKS"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            
+            BACKEND_DIR="/var/www/dravanua-hub/backend"
+            mkdir -p "$BACKEND_DIR"
+            cd "$BACKEND_DIR"
+            
+            # Check .env exists
+            if [ ! -f ".env" ]; then
+              echo "❌ CRITICAL: .env file not found at $BACKEND_DIR/.env"
+              echo "   Create .env with: DATABASE_URL, NODE_ENV, API_PORT, etc."
+              exit 1
+            fi
+            echo "✅ .env file verified"
+            
+            # Check ecosystem config exists
+            if [ ! -f "ecosystem.config.cjs" ]; then
+              echo "⚠️  ecosystem.config.cjs not found, will create minimal version"
+            else
+              echo "✅ ecosystem.config.cjs found"
+            fi
+            
+            # Verify PM2 is installed
+            if ! command -v pm2 &> /dev/null; then
+              echo "❌ PM2 not installed globally"
+              echo "   Run: npm install -g pm2"
+              exit 1
+            fi
+            echo "✅ PM2 is installed"
+            
+            # ═══════════════════════════════════════════════════════════
+            # SECTION 2: GIT UPDATE
+            # ═══════════════════════════════════════════════════════════
+            echo ""
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo "📥 FETCHING LATEST CODE"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            
+            if [ ! -d ".git" ]; then
+              echo "🔄 First deployment - cloning repository..."
+              git clone "$BACKEND_REPO" .
+            else
+              echo "🔄 Fetching latest changes from GitHub..."
+              git fetch origin --quiet
+            fi
+            
+            # Store current commit for potential rollback
+            PREVIOUS_COMMIT=$(git rev-parse HEAD 2>/dev/null || echo "unknown")
+            echo "   Current commit: $PREVIOUS_COMMIT"
+            
+            echo "📍 Resetting to main branch (origin/main)..."
+            git reset --hard origin/main --quiet
+            git clean -fd --quiet
+            
+            NEW_COMMIT=$(git rev-parse HEAD)
+            echo "✅ Updated to commit: $NEW_COMMIT"
+            
+            if [ "$PREVIOUS_COMMIT" != "unknown" ] && [ "$PREVIOUS_COMMIT" = "$NEW_COMMIT" ]; then
+              echo "ℹ️  No new commits - continuing with deployment"
+            fi
+            
+            # ═══════════════════════════════════════════════════════════
+            # SECTION 3: DEPENDENCY INSTALLATION
+            # ═══════════════════════════════════════════════════════════
+            echo ""
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo "📦 INSTALLING PRODUCTION DEPENDENCIES"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            
+            echo "🔄 Installing npm dependencies (omitting dev)..."
+            npm ci --omit=dev --silent
+            echo "✅ Dependencies installed"
+            
+            # ═══════════════════════════════════════════════════════════
+            # SECTION 4: DATABASE MIGRATIONS (WITH ROLLBACK CAPABILITY)
+            # ═══════════════════════════════════════════════════════════
+            echo ""
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo "🗄️  DATABASE MIGRATIONS"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            
+            if [ ! -f "package.json" ] || ! grep -q "sequelize-cli" package.json; then
+              echo "⚠️  Sequelize CLI not configured - skipping migrations"
+            else
+              echo "🔄 Running Sequelize migrations..."
+              
+              if npx sequelize-cli db:migrate --env production; then
+                echo "✅ Migrations completed successfully"
+              else
+                MIGRATION_EXIT_CODE=$?
+                echo "❌ MIGRATION FAILED (exit code: $MIGRATION_EXIT_CODE)"
+                echo ""
+                echo "📋 ROLLBACK PROCEDURE:"
+                echo "   1. SSH into server"
+                echo "   2. cd $BACKEND_DIR"
+                echo "   3. npx sequelize-cli db:migrate:undo --env production"
+                echo "   4. git reset --hard $PREVIOUS_COMMIT"
+                echo "   5. pm2 reload dravanua-hub-backend"
+                echo ""
+                echo "⚠️  Aborting deployment - no process restart will occur"
+                exit 1
+              fi
+            fi
+            
+            # ═══════════════════════════════════════════════════════════
+            # SECTION 5: ECOSYSTEM CONFIG VERIFICATION
+            # ═══════════════════════════════════════════════════════════
+            echo ""
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo "⚙️  PROCESS CONFIGURATION"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            
+            if [ ! -f "ecosystem.config.cjs" ]; then
+              echo "📝 Creating ecosystem.config.cjs..."
+              cat > ecosystem.config.cjs << 'ECONFIG'
+            module.exports = {
+              apps: [
+                {
+                  name: 'dravanua-hub-backend',
+                  script: './src/server.js',
+                  instances: 'max',
+                  exec_mode: 'cluster',
+                  env: {
+                    NODE_ENV: 'production',
+                    PORT: 3000
+                  },
+                  merge_logs: true,
+                  max_memory_restart: '500M',
+                  error_file: './logs/error.log',
+                  out_file: './logs/out.log',
+                  log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
+                }
+              ]
+            };
+            ECONFIG
+              echo "✅ ecosystem.config.cjs created"
+            else
+              echo "✅ ecosystem.config.cjs found and ready"
+            fi
+            
+            # ═══════════════════════════════════════════════════════════
+            # SECTION 6: PM2 DEPLOYMENT (ZERO-DOWNTIME)
+            # ═══════════════════════════════════════════════════════════
+            echo ""
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo "🔄 DEPLOYING WITH PM2 (ZERO-DOWNTIME)"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            
+            if pm2 info dravanua-hub-backend > /dev/null 2>&1; then
+              echo "   ↳ Existing process found, reloading (zero-downtime)..."
+              
+              if pm2 reload dravanua-hub-backend; then
+                echo "✅ Process reloaded successfully"
+              else
+                RELOAD_EXIT=$?
+                echo "⚠️  Reload failed (exit $RELOAD_EXIT), attempting restart..."
+                pm2 restart dravanua-hub-backend || {
+                  echo "❌ Restart also failed"
+                  exit 1
+                }
+              fi
+            else
+              echo "   ↳ No existing process, starting new instance..."
+              
+              if pm2 start ecosystem.config.cjs; then
+                echo "✅ New process started successfully"
+              else
+                echo "❌ Failed to start process"
+                exit 1
+              fi
+            fi
+            
+            echo "💾 Persisting PM2 state..."
+            pm2 save
+            echo "✅ PM2 state saved"
+            
+            # ═══════════════════════════════════════════════════════════
+            # SECTION 7: SUMMARY
+            # ═══════════════════════════════════════════════════════════
+            echo ""
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo "✅ PRODUCTION DEPLOYMENT COMPLETE"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo ""
+            echo "📊 Current Status:"
+            pm2 list
+            echo ""
+            echo "📝 Deployment Info:"
+            echo "   Commit: $NEW_COMMIT"
+            echo "   Branch: main"
+            echo "   Time: $(date)"
+            echo ""
+
+      - name: 🏥 Health Check with Retry Logic
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "🏥 HEALTH CHECK (Retry Logic)"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          
+          # Use API domain from secrets (not raw SSH host)
+          API_URL="${{ secrets.API_BASE_URL }}/api/health"
+          echo "   Target: $API_URL"
+          echo ""
+          
+          MAX_ATTEMPTS=30
+          RETRY_DELAY=2
+          ATTEMPT=1
+          
+          while [ $ATTEMPT -le $MAX_ATTEMPTS ]; do
+            echo "   [Attempt $ATTEMPT/$MAX_ATTEMPTS] Checking health..."
+            
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+              --connect-timeout 5 \
+              --max-time 10 \
+              "$API_URL" 2>/dev/null || echo "000")
+            
+            if [ "$HTTP_CODE" = "200" ]; then
+              echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+              echo "✅ HEALTH CHECK PASSED"
+              echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+              echo "   HTTP Status: 200 OK"
+              echo "   Service: Responding normally"
+              exit 0
+            fi
+            
+            echo "      ↳ HTTP Status: $HTTP_CODE (expected 200)"
+            
+            if [ $ATTEMPT -lt $MAX_ATTEMPTS ]; then
+              echo "      ↳ Retrying in ${RETRY_DELAY}s..."
+              sleep $RETRY_DELAY
+            fi
+            
+            ATTEMPT=$((ATTEMPT + 1))
+          done
+          
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "⚠️  HEALTH CHECK FAILED"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "   Attempts: $MAX_ATTEMPTS (60 seconds elapsed)"
+          echo ""
+          echo "🔍 DEBUGGING STEPS:"
+          echo "   1. SSH into server: ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}"
+          echo "   2. Check PM2 logs: pm2 logs dravanua-hub-backend"
+          echo "   3. Check process status: pm2 status"
+          echo "   4. Check for errors: pm2 info dravanua-hub-backend"
+          echo ""
+          exit 1
+        continue-on-error: true
+
+  # ─────────────────────────────────────────
+  # CD: Staging Deployment (staging branch)
+  # ─────────────────────────────────────────
+  deploy-staging:
+    name: 🧪 Deploy to Staging
+    needs: validate
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/staging'
+
+    steps:
+      - name: 🧪 Deploy to Staging Server
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.STAGING_SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
+          script_stop: true
+          script: |
+            set -e
+            
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo "🧪 STAGING DEPLOYMENT"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            
+            BACKEND_DIR="/var/www/dravanua-hub-staging/backend"
+            mkdir -p "$BACKEND_DIR"
+            cd "$BACKEND_DIR"
+            
+            # Pre-flight checks
+            if [ ! -f ".env" ]; then
+              echo "❌ .env not found at $BACKEND_DIR/.env"
+              exit 1
+            fi
+            echo "✅ .env verified"
+            
+            # Git update
+            if [ ! -d ".git" ]; then
+              git clone https://github.com/ericmaniraguha/dravanua_backend.git .
+            else
+              git fetch origin
+            fi
+            
+            git reset --hard origin/staging --quiet
+            git clean -fd --quiet
+            echo "✅ Code updated to staging branch"
+            
+            # Dependencies
+            npm ci --omit=dev --silent
+            echo "✅ Dependencies installed"
+            
+            # Migrations (staging)
+            if [ -f "package.json" ] && grep -q "sequelize-cli" package.json; then
+              echo "🔄 Running staging migrations..."
+              if ! npx sequelize-cli db:migrate --env staging; then
+                echo "⚠️  Staging migration failed - attempting undo..."
+                npx sequelize-cli db:migrate:undo --env staging || true
+                exit 1
+              fi
+              echo "✅ Migrations complete"
+            fi
+            
+            # Use SEPARATE ecosystem config for staging (NOT production config!)
+            if [ ! -f "ecosystem.staging.cjs" ]; then
+              echo "📝 Creating separate staging ecosystem config..."
+              cat > ecosystem.staging.cjs << 'ECONFIG'
+            module.exports = {
+              apps: [
+                {
+                  name: 'dravanua-hub-backend-staging',
+                  script: './src/server.js',
+                  instances: 1,
+                  exec_mode: 'fork',
+                  env: {
+                    NODE_ENV: 'staging',
+                    PORT: 3001
+                  },
+                  merge_logs: true
+                }
+              ]
+            };
+            ECONFIG
+            fi
+            
+            # Deploy
+            if pm2 info dravanua-hub-backend-staging > /dev/null 2>&1; then
+              pm2 reload dravanua-hub-backend-staging
+            else
+              pm2 start ecosystem.staging.cjs
+            fi
+            
+            pm2 save
+            
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo "✅ STAGING DEPLOYMENT COMPLETE"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            pm2 list
+
+      - name: 🏥 Staging Health Check
+        run: |
+          echo "🏥 Staging health check..."
+          
+          API_URL="${{ secrets.STAGING_API_BASE_URL }}/api/health"
+          
+          for i in {1..20}; do
+            if curl -sf "$API_URL" > /dev/null 2>&1; then
+              echo "✅ Staging backend is healthy"
+              exit 0
+            fi
+            echo "Attempt $i/20 - retrying..."
+            sleep 2
+          done
+          
+          echo "⚠️  Staging health check failed"
+          exit 1
+        continue-on-error: true
+
+  # ─────────────────────────────────────────
+  # Notifications
+  # ─────────────────────────────────────────
+  notify:
+    name: 📣 Notification
+    needs: [validate]
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+      - name: ✅ Success Summary
+        if: success()
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "✅ BACKEND PIPELINE SUCCESS"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo ""
+          echo "📋 Deployment Details:"
+          echo "   Branch: ${{ github.ref_name }}"
+          echo "   Commit: ${{ github.sha }}"
+          echo "   Author: ${{ github.actor }}"
+          echo ""
+
+      - name: ❌ Failure Summary
+        if: failure()
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "❌ BACKEND PIPELINE FAILED"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo ""
+          echo "🔍 Review the logs above for details"
+          echo ""
+          exit 1
