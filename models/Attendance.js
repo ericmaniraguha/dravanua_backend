@@ -39,6 +39,11 @@ const Attendance = sequelize.define('Attendance', {
     field: 'clock_out',
     allowNull: true
   },
+  lastClockIn: {
+    type: DataTypes.DATE,
+    field: 'last_clock_in',
+    allowNull: true
+  },
   totalHours: {
     type: DataTypes.FLOAT,
     field: 'total_hours',
@@ -69,18 +74,19 @@ const Attendance = sequelize.define('Attendance', {
     field: 'check_in_method',
     defaultValue: 'GPS_TERMINAL'
   },
-  status: {type: DataTypes.STRING,
-      field: "att_status",
-    defaultValue: 'on-duty'
+  status: {
+    type: DataTypes.STRING,
+    field: "att_status",
+    defaultValue: 'off-duty' // default to off-duty until clocked in
   },
   zone: {
     type: DataTypes.STRING,
     allowNull: true
   },
-  // Conditional geom for PostGIS (only if not SQLite)
+  // Conditional geom for MySQL/MariaDB spatial support
   ...(isSqlite ? {} : {
     geom: {
-      type: DataTypes.GEOMETRY('POINT', 4326),
+      type: DataTypes.GEOMETRY('POINT'),
       allowNull: true
     }
   }),

@@ -60,7 +60,7 @@ const Violation = sequelize.define('Violation', {
      field: 'device_info'
   },
   geom: {
-    type: DataTypes.GEOMETRY('POINT', 4326),
+    type: DataTypes.GEOMETRY('POINT'),
     allowNull: true
   }
 }, {

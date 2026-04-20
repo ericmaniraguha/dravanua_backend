@@ -109,7 +109,7 @@ const adminLogin = async (req, res) => {
     const accessToken = jwt.sign(
       { id: user.id, name: user.name, role: user.role, departmentId: user.departmentId },
       process.env.JWT_SECRET || "dravanua-access-secret",
-      { expiresIn: "15m" }
+      { expiresIn: process.env.JWT_EXPIRES_IN || "8h" }
     );
 
     // Generate Refresh Token (Long: 7 days)
@@ -127,7 +127,7 @@ const adminLogin = async (req, res) => {
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
@@ -165,7 +165,7 @@ const adminRefresh = async (req, res) => {
     const accessToken = jwt.sign(
       { id: user.id, name: user.name, role: user.role, departmentId: user.departmentId },
       process.env.JWT_SECRET || "dravanua-access-secret",
-      { expiresIn: "15m" }
+      { expiresIn: process.env.JWT_EXPIRES_IN || "8h" }
     );
 
     res.json({ success: true, token: accessToken });
@@ -859,23 +859,20 @@ const getAttendance = async (req, res) => {
 const clockIn = async (req, res) => {
   try {
     const today = new Date().toISOString().split("T")[0];
-    const existing = await Attendance.findOne({
-      where: { userId: req.user.id, date: today },
-    });
-    if (existing)
-      return res
-        .status(400)
-        .json({ success: false, message: "Already clocked in today" });
+    const now = new Date();
 
-    const { lat, lon, accuracy, altitude, speed, heading } = req.body;
+    // Support both naming conventions (lat/lon vs gps_lat/gps_lon)
+    const lat = req.body.gps_lat || req.body.lat;
+    const lon = req.body.gps_lon || req.body.lon;
+    const accuracy = req.body.gps_accuracy || req.body.accuracy;
+    const { altitude, speed, heading } = req.body;
 
-    // Get Office Location for distance verification
-    const office = await OfficeLocation.findOne({ where: { is_active: true } });
-    
     if (!lat || !lon) {
       return res.status(400).json({ success: false, message: "GPS coordinates are required for attendance verification." });
     }
 
+    // Get Office Location for distance verification
+    const office = await OfficeLocation.findOne({ where: { is_active: true } });
     const distanceToOffice = office
       ? calculateDistance(lat, lon, office.latitude, office.longitude)
       : null;
@@ -890,22 +887,50 @@ const clockIn = async (req, res) => {
       }
     }
 
-    let userName = req.user.name;
-    if (!userName) {
-      const user = await AdminUser.findByPk(req.user.id);
-      userName = user ? user.name : "Unknown Staff";
+    // Check if an existing record exists for today
+    const existingRecord = await Attendance.findOne({
+      where: { userId: req.user.id, date: today },
+    });
+
+    if (existingRecord && existingRecord.status === 'on-duty') {
+      return res.status(400).json({
+        success: false,
+        message: "You are already clocked in.",
+        code: "ALREADY_CHECKED_IN"
+      });
     }
 
-    const record = await Attendance.create({
-      userId: req.user.id,
-      userName: userName,
-      date: today,
-      clockIn: new Date(),
-      gpsLat: lat,
-      gpsLon: lon,
-      distanceFromOffice: distanceToOffice,
-      status: "present",
-    });
+    let record;
+    if (existingRecord) {
+      // Subsequent session today
+      await existingRecord.update({
+        lastClockIn: now.toISOString(),
+        status: "on-duty",
+        gpsLat: lat,
+        gpsLon: lon,
+        distanceFromOffice: distanceToOffice
+      });
+      record = existingRecord;
+    } else {
+      // First session today
+      let userName = req.user.name;
+      if (!userName) {
+        const user = await AdminUser.findByPk(req.user.id);
+        userName = user ? user.name : "Unknown Staff";
+      }
+
+      record = await Attendance.create({
+        userId: req.user.id,
+        userName: userName,
+        date: today,
+        clockIn: now,
+        lastClockIn: now.toISOString(),
+        gpsLat: lat,
+        gpsLon: lon,
+        distanceFromOffice: distanceToOffice,
+        status: "on-duty",
+      });
+    }
 
     // Save detailed GPS history
     await LocationHistory.create({
@@ -936,27 +961,41 @@ const clockOut = async (req, res) => {
   try {
     const today = new Date().toISOString().split("T")[0];
     const record = await Attendance.findOne({
-      where: { userId: req.user.id, date: today },
+      where: { userId: req.user.id, date: today, status: 'on-duty' },
     });
     if (!record)
       return res
         .status(404)
-        .json({ success: false, message: "No clock-in record found" });
+        .json({ success: false, message: "No active clock-in session found for today." });
 
-    const { lat, lon, accuracy, altitude, speed, heading } = req.body;
-    const cOut = new Date();
-    const hours = (cOut - new Date(record.clockIn)) / (1000 * 60 * 60);
+    // Support both naming conventions
+    const lat = req.body.gps_lat || req.body.lat;
+    const lon = req.body.gps_lon || req.body.lon;
+    const accuracy = req.body.gps_accuracy || req.body.accuracy;
+    const { altitude, speed, heading } = req.body;
 
-    // Calc distance
-    const office = await OfficeLocation.findOne({ where: { is_active: true } });
-    
     if (!lat || !lon) {
       return res.status(400).json({ success: false, message: "GPS coordinates are required for attendance verification." });
     }
 
+    const clockOutTime = new Date();
+    // Use lastClockIn for interval, fallback to clockIn
+    const sessionStartTime = new Date(record.lastClockIn || record.clockIn);
+    
+    const timeDiffMs = clockOutTime - sessionStartTime;
+    const sessionHours = parseFloat((timeDiffMs / (1000 * 60 * 60)).toFixed(2));
+
+    if (sessionHours < 0) {
+      return res.status(400).json({ success: false, message: "Invalid session timing." });
+    }
+
+    const newTotalHours = parseFloat(((record.totalHours || 0) + sessionHours).toFixed(2));
+
+    // Calc distance
+    const office = await OfficeLocation.findOne({ where: { is_active: true } });
     const distanceToOffice = office
       ? calculateDistance(lat, lon, office.latitude, office.longitude)
-      : null;
+      : record.distanceFromOffice;
 
     if (office && distanceToOffice !== null) {
       const maxRadius = office.buffer_radius || office.allowed_radius || 150;
@@ -969,11 +1008,13 @@ const clockOut = async (req, res) => {
     }
 
     await record.update({
-      clockOut: cOut,
+      clockOut: clockOutTime,
+      totalHours: newTotalHours,
+      status: "off-duty",
+      lastClockIn: null, // Reset for next session
       gpsLat: lat || record.gpsLat,
       gpsLon: lon || record.gpsLon,
-      distanceFromOffice: distanceToOffice || record.distanceFromOffice,
-      totalHours: parseFloat(hours.toFixed(2)),
+      distanceFromOffice: distanceToOffice
     });
 
     // Save detailed GPS history
@@ -1021,6 +1062,17 @@ const getOfficeLocation = async (req, res) => {
     res.json({ success: true, data: location });
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch office location" });
+  }
+};
+
+const getOfficeLocations = async (req, res) => {
+  try {
+    const locations = await OfficeLocation.findAll({
+      order: [['is_active', 'DESC'], ['office_name', 'ASC']]
+    });
+    res.json({ success: true, data: locations });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch office locations" });
   }
 };
 
@@ -2551,6 +2603,7 @@ module.exports = {
   sendContract,
   updateProfile,
   getOfficeLocation,
+  getOfficeLocations,
   updateOfficeLocation,
   getTeamMembers,
   createTeamMember,

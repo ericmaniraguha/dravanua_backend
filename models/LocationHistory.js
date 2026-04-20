@@ -45,7 +45,7 @@ const LocationHistory = sequelize.define('LocationHistory', {
      field: 'action_type'
   },
   geom: {
-    type: DataTypes.GEOMETRY('POINT', 4326),
+    type: DataTypes.GEOMETRY('POINT'),
     allowNull: true
   }
 }, {
@@ -55,12 +55,29 @@ const LocationHistory = sequelize.define('LocationHistory', {
   indexes: [
     { fields: ['user_id'] },
     { fields: ['attendance_id'] },
-    { fields: ['recorded_at'] },
-    { 
-      fields: ['geom'],
-      using: 'GIST'
+    { fields: ['recorded_at'] }
+    // NOTE: SPATIAL INDEX on geom is created separately via afterSync hook
+    // MySQL does not support 'USING SPATIAL' in Sequelize's ADD INDEX syntax
+  ],
+  hooks: {
+    afterSync: async () => {
+      try {
+        const [rows] = await sequelize.query(
+          `SELECT INDEX_NAME FROM INFORMATION_SCHEMA.STATISTICS
+           WHERE TABLE_SCHEMA = DATABASE()
+           AND TABLE_NAME = 'gps_location_history'
+           AND INDEX_NAME = 'idx_location_geom'`
+        );
+        if (rows.length === 0) {
+          await sequelize.query(
+            'CREATE SPATIAL INDEX idx_location_geom ON gps_location_history (geom)'
+          );
+        }
+      } catch (e) {
+        // Ignore — index may fail if geom column has NULLs; harmless
+      }
     }
-  ]
+  }
 });
 
 module.exports = LocationHistory;

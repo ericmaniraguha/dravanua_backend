@@ -1,60 +1,69 @@
-require('dotenv').config();
-const { sequelize } = require('./config/db');
-const { AdminUser, Department } = require('./models/index');
+require("dotenv").config();
+
+const { sequelize } = require("./config/db");
+const { AdminUser, Department } = require("./models");
 
 async function syncDatabase() {
-  console.log('🚀 Starting Final Database Reconstruction...');
-  console.log('✨ Optimized descriptive schema applying...');
+  console.log("🚀 Starting Database Initialization...");
+  console.log("✨ Applying schema and seeding core data...\n");
 
   try {
+    // 1. Test DB connection
     await sequelize.authenticate();
-    
-    // Enable PostGIS
-    if (sequelize.getDialect() === 'postgres') {
-      await sequelize.query('CREATE EXTENSION IF NOT EXISTS postgis;');
-      console.log('✅ PostGIS confirmed');
-    }
+    console.log("✅ Database connection successful");
 
-    await sequelize.sync({ force: true });
-    
-    console.log('✨ Schema synchronized. Seeding core data...');
+    // 2. Sync models safely (NO DATA LOSS)
+    await sequelize.sync({ alter: true });
+    console.log("✅ Schema synchronized successfully");
 
-    // 1. Seed Departments
+    // 3. Seed default departments
+    console.log("🌱 Seeding departments...");
     await Department.seedDefaults();
 
-    // 2. Seed Super Admin from .env
+    // 4. Create Super Admin (if not exists)
     const adminEmail = process.env.ADMIN_EMAIL;
     const adminPassword = process.env.ADMIN_PASSWORD;
     const adminName = process.env.ADMIN_NAME || "Super Admin";
 
     if (!adminEmail || !adminPassword) {
-      console.warn('⚠️  ADMIN_EMAIL or ADMIN_PASSWORD not found in .env. Skipping superadmin seeding.');
+      console.warn(
+        "⚠️ ADMIN_EMAIL or ADMIN_PASSWORD missing. Skipping admin creation.",
+      );
     } else {
-      const headDeptId = await Department.resolveId('General Administration');
-      
-      await AdminUser.create({
-        name: adminName,
-        email: adminEmail,
-        password: adminPassword,
-        role: 'super_admin',
-        isActive: true,
-        isEmailConfirmed: true,
-        departmentId: headDeptId
+      const existingAdmin = await AdminUser.findOne({
+        where: { email: adminEmail },
       });
 
-      console.log(`👤 Super Admin provisioned: ${adminEmail} (${adminName})`);
+      if (!existingAdmin) {
+        const deptId = await Department.resolveId("General Administration");
+
+        await AdminUser.create({
+          name: adminName,
+          email: adminEmail,
+          password: adminPassword,
+          role: "super_admin",
+          isActive: true,
+          isEmailConfirmed: true,
+          departmentId: deptId,
+        });
+
+        console.log(`👤 Super Admin created: ${adminEmail}`);
+      } else {
+        console.log("ℹ️ Super Admin already exists");
+      }
     }
 
-    console.log(`\n✨ ${process.env.PROJECT_NAME || 'DATABASE'} RECONSTRUCTED & SEEDED SUCCESSFULLY!`);
-    console.log('------------------------------------------');
-    console.log('• Redundant UUIDs: REMOVED');
-    console.log('• Fields Remapped: user_name, user_email, dept_name, etc.');
-    console.log('• Super Admin:     READY');
-    console.log('------------------------------------------\n');
-    
+    console.log("\n🎉 DATABASE INITIALIZATION COMPLETE");
+    console.log("----------------------------------");
+    console.log("✔ Schema ready");
+    console.log("✔ Core data seeded");
+    console.log("✔ Super admin verified");
+    console.log("----------------------------------\n");
+
     process.exit(0);
   } catch (error) {
-    console.error('\n❌ RECONSTRUCTION FAILED:', error.message);
+    console.error("\n❌ DATABASE INITIALIZATION FAILED:");
+    console.error(error.message);
     process.exit(1);
   }
 }

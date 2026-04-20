@@ -49,6 +49,7 @@ const {
   uploadToDropbox,
   updateProfile,
   getOfficeLocation,
+  getOfficeLocations,
   updateOfficeLocation,
   getTeamMembers,
   createTeamMember,
@@ -233,6 +234,7 @@ router.delete("/team/:id", authMiddleware, isSuperAdmin, deleteTeamMember);
 
 // GPS & Location Settings
 router.get("/office-location", authMiddleware, getOfficeLocation);
+router.get("/office-locations", authMiddleware, getOfficeLocations);
 router.put(
   "/office-location",
   authMiddleware,
