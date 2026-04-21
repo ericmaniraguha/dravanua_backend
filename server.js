@@ -68,6 +68,22 @@ app.use(
 app.use(`${API_PREFIX}/public`, publicRoutes);
 app.use(`${API_PREFIX}/customer`, customerRoutes);
 
+// API v1 root index
+app.get(API_PREFIX, (req, res) => {
+  res.status(200).json({
+    name: process.env.PROJECT_NAME || "DRAVANUA HUB API",
+    version: process.env.PROJECT_VERSION || "1.0.0",
+    status: "Running",
+    endpoints: {
+      health:    `${API_PREFIX}/health`,
+      contact:   `${API_PREFIX}/contact`,
+      admin:     `${API_PREFIX}/admin`,
+      public:    `${API_PREFIX}/public`,
+      customer:  `${API_PREFIX}/customer`,
+    },
+  });
+});
+
 // Simple health check
 app.get(`${API_PREFIX}/health`, (req, res) => {
   res.status(200).json({

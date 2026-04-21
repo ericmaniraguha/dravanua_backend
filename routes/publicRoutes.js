@@ -27,6 +27,19 @@ router.get('/team', async (req, res) => {
   }
 });
 
+// Public API index — GET /api/v1/public
+router.get('/', (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'DRAVANUA Public API',
+    endpoints: {
+      gallery:   '/api/v1/public/gallery',
+      team:      '/api/v1/public/team',
+      marketing: '/api/v1/public/marketing',
+    },
+  });
+});
+
 // Public marketing assets
 router.get('/marketing', getPublicMarketingAssets);
 
