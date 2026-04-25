@@ -24,7 +24,7 @@ const Transaction = sequelize.define(
       references: { model: 'departments', key: 'department_id' }
     },
     type: {
-      type: DataTypes.ENUM("Sale", "Expense"),
+      type: DataTypes.ENUM("Revenue", "Expense", "Asset", "Liability", "Equity"),
       allowNull: false,
     },
     amount: {type: DataTypes.DECIMAL(12, 2),

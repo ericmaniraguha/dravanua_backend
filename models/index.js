@@ -29,11 +29,14 @@ const OrgSavings = require('./OrgSavings');
 const OrgFinanceLog = require('./OrgFinanceLog');
 const Operation = require('./Operation');
 const Task = require('./Task');
+const Item = require('./Item');
+const Partner = require('./Partner');
+const InventoryMovement = require('./InventoryMovement');
 
 // --- ASSOCIATIONS ---
 
 // Departments (Central Lookup)
-[AdminUser, ActivityLog, Attendance, Booking, DailyReport, Expense, Purchase, DailyRequest, DailyFloat, MarketingAsset, Gallery, Message, Transaction, ReceiptDocument, Subscription, Reminder, Operation, Task].forEach(Model => {
+[AdminUser, ActivityLog, Attendance, Booking, DailyReport, Expense, Purchase, DailyRequest, DailyFloat, MarketingAsset, Gallery, Message, Transaction, ReceiptDocument, Subscription, Reminder, Operation, Task, Item, Partner, InventoryMovement].forEach(Model => {
     Department.hasMany(Model, { foreignKey: 'department_id' });
     Model.belongsTo(Department, { foreignKey: 'department_id' });
 });
@@ -79,7 +82,7 @@ TeamMember.belongsTo(AdminUser, { foreignKey: 'admin_user_id', as: 'AdminUserAcc
 AdminUser.hasOne(TeamMember, { foreignKey: 'admin_user_id', as: 'WebsiteProfile' });
 
 // Payroll & Salary
-AdminUser.hasOne(SalaryStructure, { foreignKey: 'user_id' });
+AdminUser.hasOne(SalaryStructure, { foreignKey: 'user_id', as: 'SalaryStructure' });
 SalaryStructure.belongsTo(AdminUser, { foreignKey: 'user_id' });
 
 AdminUser.hasMany(PayrollRecord, { foreignKey: 'user_id' });
@@ -110,6 +113,10 @@ Attendance.hasMany(LocationHistory, { foreignKey: 'attendance_id' });
 // Bookings & Customers
 Booking.belongsTo(Customer, { foreignKey: 'customer_id' });
 Customer.hasMany(Booking, { foreignKey: 'customer_id' });
+
+// Inventory
+Item.hasMany(InventoryMovement, { foreignKey: 'itemId' });
+InventoryMovement.belongsTo(Item, { foreignKey: 'itemId' });
 
 module.exports = {
   AdminUser,
@@ -142,5 +149,8 @@ module.exports = {
   OrgSavings,
   OrgFinanceLog,
   Operation,
-  Task
+  Task,
+  Item,
+  Partner,
+  InventoryMovement
 };

@@ -1,5 +1,6 @@
 const { DataTypes } = require('sequelize');
 const { sequelize } = require('../config/db');
+const isSqlite = sequelize.getDialect() === 'sqlite';
 
 const LocationHistory = sequelize.define('LocationHistory', {
   id: {
@@ -44,10 +45,13 @@ const LocationHistory = sequelize.define('LocationHistory', {
      type: DataTypes.STRING,
      field: 'action_type'
   },
-  geom: {
-    type: DataTypes.GEOMETRY('POINT', 4326),
-    allowNull: true
-  }
+  // Conditional geom — MySQL/MariaDB spatial support only (not supported by SQLite)
+  ...(isSqlite ? {} : {
+    geom: {
+      type: DataTypes.GEOMETRY('POINT'),
+      allowNull: true
+    }
+  })
 }, {
   tableName: 'gps_location_history',
   timestamps: false,
@@ -55,12 +59,30 @@ const LocationHistory = sequelize.define('LocationHistory', {
   indexes: [
     { fields: ['user_id'] },
     { fields: ['attendance_id'] },
-    { fields: ['recorded_at'] },
-    { 
-      fields: ['geom'],
-      using: 'GIST'
+    { fields: ['recorded_at'] }
+    // NOTE: SPATIAL INDEX on geom is created separately via afterSync hook
+    // MySQL does not support 'USING SPATIAL' in Sequelize's ADD INDEX syntax
+  ],
+  hooks: {
+    afterSync: async () => {
+      if (isSqlite) return; // SPATIAL INDEX not supported in SQLite
+      try {
+        const [rows] = await sequelize.query(
+          `SELECT INDEX_NAME FROM INFORMATION_SCHEMA.STATISTICS
+           WHERE TABLE_SCHEMA = DATABASE()
+           AND TABLE_NAME = 'gps_location_history'
+           AND INDEX_NAME = 'idx_location_geom'`
+        );
+        if (rows.length === 0) {
+          await sequelize.query(
+            'CREATE SPATIAL INDEX idx_location_geom ON gps_location_history (geom)'
+          );
+        }
+      } catch (e) {
+        // Ignore — index may fail if geom column has NULLs; harmless
+      }
     }
-  ]
+  }
 });
 
 module.exports = LocationHistory;

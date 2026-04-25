@@ -20,6 +20,12 @@ const DailyReport = sequelize.define('DailyReport', {
     allowNull: true,
     references: { model: 'departments', key: 'department_id' }
   },
+  customerId: {
+    type: DataTypes.UUID,
+    field: 'customer_id',
+    allowNull: true,
+    references: { model: 'customers', key: 'customer_id' }
+  },
   paymentMethod: {
     type: DataTypes.STRING,
     field: 'payment_method'
@@ -69,7 +75,12 @@ const DailyReport = sequelize.define('DailyReport', {
     type: DataTypes.STRING,
     field: 'created_by'
   },
-  currency: DataTypes.STRING
+  currency: DataTypes.STRING,
+  unavailableItems: {
+    type: DataTypes.TEXT,
+    field: 'unavailable_items',
+    allowNull: true
+  }
 }, {
   tableName: 'daily_reports',
   timestamps: true,

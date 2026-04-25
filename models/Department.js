@@ -29,11 +29,13 @@ const Department = sequelize.define(
     isActive: {
       type: DataTypes.BOOLEAN,
       defaultValue: true,
+      field: 'is_active',
     },
   },
   {
     tableName: "departments",
     timestamps: true,
+    underscored: true,
     indexes: [
       { unique: true, fields: ['dept_name'] },
       { unique: true, fields: ['code'] }
