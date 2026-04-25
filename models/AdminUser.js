@@ -1,9 +1,7 @@
 const { DataTypes } = require("sequelize");
-const { sequelize } = require("../config/db");
-const bcrypt = require("bcryptjs");
 
-const AdminUser = sequelize.define(
-  "AdminUser",
+module.exports = (sequelize) => {
+  const AdminUser = sequelize.define("AdminUser",
   {
     id: {
       type: DataTypes.UUID,
@@ -161,4 +159,7 @@ AdminUser.prototype.comparePassword = async function (candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
 };
 
-module.exports = AdminUser;
+
+
+  return AdminUser;
+};

@@ -1,8 +1,7 @@
 const { DataTypes } = require("sequelize");
-const { sequelize } = require("../config/db");
 
-const Operation = sequelize.define(
-  "Operation",
+module.exports = (sequelize) => {
+  const Operation = sequelize.define("Operation",
   {
     id: {
       type: DataTypes.UUID,
@@ -49,6 +48,22 @@ const Operation = sequelize.define(
     onTime: {
       type: DataTypes.BOOLEAN,
       defaultValue: true,
+    },
+    customerId: {
+      type: DataTypes.UUID,
+      field: 'customer_id',
+      allowNull: true,
+      references: { model: 'customers', key: 'customer_id' }
+    },
+    customerName: {
+      type: DataTypes.STRING,
+      field: 'customer_name',
+      allowNull: true,
+    },
+    serviceType: {
+      type: DataTypes.STRING,
+      field: 'service_type',
+      allowNull: true,
     }
   },
   {
@@ -58,4 +73,7 @@ const Operation = sequelize.define(
   }
 );
 
-module.exports = Operation;
+
+
+  return Operation;
+};

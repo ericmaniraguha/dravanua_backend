@@ -1,12 +1,13 @@
-const { DataTypes } = require('sequelize');
-const { sequelize } = require('../config/db');
+const { DataTypes } = require("sequelize");
 
-const Gallery = sequelize.define('Gallery', {
-  id: {
+module.exports = (sequelize) => {
+  const Gallery = sequelize.define("Gallery", {
+    id: {
       type: DataTypes.UUID,
       defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
       field: 'gallery_id'
+    
     },
   userId: {
       type: DataTypes.UUID,
@@ -43,4 +44,7 @@ const Gallery = sequelize.define('Gallery', {
   underscored: true
 });
 
-module.exports = Gallery;
+
+
+  return Gallery;
+};

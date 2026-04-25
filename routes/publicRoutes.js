@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Gallery = require('../models/Gallery');
 const TeamMember = require('../models/TeamMember');
-const { getPublicMarketingAssets } = require('../controllers/adminController');
+const { getPublicMarketingAssets, getPublicPartners, getPublicOfficeLocation } = require('../controllers/adminController');
 
 // Public gallery fetch
 router.get('/gallery', async (req, res) => {
@@ -27,7 +27,27 @@ router.get('/team', async (req, res) => {
   }
 });
 
+// Public API index — GET /api/v1/public
+router.get('/', (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'DRAVANUA Public API',
+    endpoints: {
+      gallery:   '/api/v1/public/gallery',
+      team:      '/api/v1/public/team',
+      marketing: '/api/v1/public/marketing',
+      partners:  '/api/v1/public/partners',
+    },
+  });
+});
+
+// Public office location
+router.get('/office-location', getPublicOfficeLocation);
+
 // Public marketing assets
 router.get('/marketing', getPublicMarketingAssets);
+
+// Public partners
+router.get('/partners', getPublicPartners);
 
 module.exports = router;

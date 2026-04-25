@@ -13,20 +13,18 @@ const customerRoutes = require("./routes/customerRoutes");
 const payrollRoutes = require("./routes/payrollRoutes");
 const orgFinanceRoutes = require("./routes/orgFinanceRoutes");
 const subscriptionRoutes = require("./routes/subscriptionRoutes");
+const itemRoutes = require("./routes/itemRoutes");
 
 const app = express();
 const cookieParser = require("cookie-parser");
-const PORT = process.env.DRAVANUA_PORT || process.env.BACKEND_PORT || 8003;
+const PORT = process.env.DRAVANUA_PORT || 8003;
 const API_PREFIX = process.env.API_V1_STR || "/api/v1";
+const BASE_URL = process.env.BASE_URL;
 
 // Determine allowed origins dynamically from .env
 const corsOrigins = process.env.BACKEND_CORS_ORIGINS
   ? process.env.BACKEND_CORS_ORIGINS.split(",").map((url) => url.trim())
-  : [
-      `http://localhost:${process.env.FRONTEND_PORT || 5173}`,
-      "http://localhost:5174",
-      "http://localhost:5175",
-    ];
+  : ["*"];
 
 // ===== MIDDLEWARE =====
 app.use(
@@ -59,6 +57,7 @@ app.use(`${API_PREFIX}/contact`, contactRoutes);
 app.use(`${API_PREFIX}/admin`, adminRoutes);
 app.use(`${API_PREFIX}/admin/payroll`, payrollRoutes);
 app.use(`${API_PREFIX}/admin/org-finance`, orgFinanceRoutes);
+app.use(`${API_PREFIX}/admin/items`, itemRoutes);
 app.use(
   `${API_PREFIX}/admin/subscriptions`,
   authMiddleware,
@@ -67,114 +66,100 @@ app.use(
 app.use(`${API_PREFIX}/public`, publicRoutes);
 app.use(`${API_PREFIX}/customer`, customerRoutes);
 
-// Simple health check
-app.get(`${API_PREFIX}/health`, (req, res) => {
-  res.status(200).send("system is live");
-});
-
-// ===== HEALTH CHECK =====
-app.get("/", (req, res) => {
-  res.json({
+// API v1 root index
+app.get(API_PREFIX, (req, res) => {
+  res.status(200).json({
     name: process.env.PROJECT_NAME || "DRAVANUA HUB API",
     version: process.env.PROJECT_VERSION || "1.0.0",
     status: "Running",
-    brand:
-      process.env.PROJECT_BRAND_SLOGAN || "DRAVANUA HUB — Here to Create 🌿",
     endpoints: {
+      health: `${API_PREFIX}/health`,
       contact: `${API_PREFIX}/contact`,
-      projects: `${API_PREFIX}/projects`,
       admin: `${API_PREFIX}/admin`,
       public: `${API_PREFIX}/public`,
+      customer: `${API_PREFIX}/customer`,
     },
   });
 });
 
-// ===== ERROR HANDLER =====
-app.use((err, req, res, next) => {
-  console.error("Server Error:", err.stack);
-  res.status(500).json({ error: "Internal server error" });
+app.get(`${API_PREFIX}/health`, (req, res) => {
+  res.status(200).json({ status: "OK", timestamp: new Date() });
 });
 
-// ===== START SERVER =====
-const startServer = async () => {
-  console.log("");
-  console.log(
-    `🌿 ${process.env.PROJECT_NAME || "DRAVANUA HUB"} Backend Starting...`,
-  );
-  console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+// ROOT HEALTHCHECK (For Docker)
+app.get("/health", (req, res) => {
+  res.status(200).json({ status: "ok" });
+});
 
-  // Connect to Database
+app.get(`${API_PREFIX}/db-check`, async (req, res) => {
+  try {
+    await sequelize.authenticate();
+    res.status(200).json({ status: "OK", database: "Connected", timestamp: new Date() });
+  } catch (error) {
+    res.status(500).json({ status: "Error", database: "Disconnected", message: error.message });
+  }
+});
+
+// Database synchronization and server start
+const startServer = async () => {
   try {
     await connectDB();
-  } catch (err) {
-    console.error("❌ Fatal Database Error:", err.message);
-  }
+    
+    // Ensure database tables exist (Sync models)
+    console.log("🔄 Synchronizing database schema...");
+    await sequelize.sync({ alter: true });
+    console.log("✅ Database schema is up to date");
 
-  // Load Models and Sync Schema
-  try {
-    require("./models/index");
-    if (process.env.NODE_ENV !== "production") {
-      await sequelize.sync({ alter: true });
-      console.log("✅ All database tables synchronized");
-    } else {
-      console.log("ℹ️ Production: Schema sync skipped (Managed via migrations)");
-    }
-
-    // Auto-provision Super Admin & Departments
-    const { AdminUser, Department } = require("./models/index");
+    // Seed Core Data (Departments)
+    const { AdminUser, Department } = require("./models");
+    console.log("🌱 Verifying core data (Departments)...");
     await Department.seedDefaults();
-
     const adminEmail = process.env.ADMIN_EMAIL || "admin@dravanua.com";
-    const adminPassword = process.env.ADMIN_PASSWORD;
-    const adminName = process.env.ADMIN_NAME || "Super Admin";
+    const adminExists = await AdminUser.findOne({ where: { email: adminEmail } });
 
-    const existingAdmin = await AdminUser.findOne({
-      where: { email: adminEmail },
-    });
-
-    if (!existingAdmin && adminPassword) {
-      const headDeptId = await Department.resolveId("General Administration");
+    if (!adminExists) {
       await AdminUser.create({
-        name: adminName,
+        name: process.env.ADMIN_NAME || "Super Admin",
         email: adminEmail,
-        password: adminPassword,
+        password: process.env.ADMIN_PASSWORD || "admin123",
         role: "super_admin",
         isActive: true,
         isEmailConfirmed: true,
-        departmentId: headDeptId,
       });
-      console.log(`👤 Super Admin provisioned: ${adminEmail} (${adminName})`);
-    } else if (!existingAdmin && !adminPassword) {
-      console.warn(
-        "⚠️  No Super Admin found and ADMIN_PASSWORD is not set in .env",
-      );
+      console.log(`✅ Default Super Admin created: ${adminEmail}`);
     }
-  } catch (syncError) {
-    console.error(
-      "⚠️ Database synchronization/provisioning failed:",
-      syncError.message,
-    );
+
+    app
+    .listen(PORT, () => {
+      const displayUrl = BASE_URL || `http://localhost:${PORT}`;
+      console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+      console.log(`✅ Server is running on port ${PORT}`);
+      console.log(`📡 API Base: ${displayUrl}${API_PREFIX}`);
+      console.log(`🏥 Health Check: ${displayUrl}${API_PREFIX}/health`);
+      console.log(`🔍 DB Check: ${displayUrl}${API_PREFIX}/db-check`);
+      console.log(`📖 Documentation: ${displayUrl}/`);
+      console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+      console.log("");
+      console.log("✨ Backend is ready to accept requests!");
+      console.log("");
+    })
+    .on("error", (err) => {
+      console.error("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+      console.error("❌ Failed to start HTTP server:", err.message);
+      console.error("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+      if (err.code === "EADDRINUSE") {
+        console.error(`   Port ${PORT} is already in use.`);
+        console.error(`   Either stop the process using that port,`);
+        console.error(`   or set a different DRAVANUA_PORT / BACKEND_PORT in your .env`);
+      }
+      process.exit(1);
+    });
+
+  } catch (err) {
+    console.error("❌ Database synchronization failed:", err.message);
+    console.error("   Ensure your database credentials and connection are correct.");
+    process.exit(1);
   }
-
-  // Verify SMTP email connection
-  try {
-    await verifyEmailConnection();
-  } catch (emailError) {
-    console.error("⚠️ Email service connection failed:", emailError.message);
-  }
-
-  // Start listening
-  const HOST =
-    process.env.DRAVANUA_HOST || process.env.DEFAULT_HOST || "localhost";
-  const PROTOCOL = process.env.PROTOCOL || "http";
-
-  app.listen(PORT, () => {
-    console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-    console.log(`🚀 Server running on ${PROTOCOL}://${HOST}:${PORT}`);
-    console.log(`📡 API Base: ${PROTOCOL}://${HOST}:${PORT}${API_PREFIX}`);
-    console.log(`📋 Health Check: ${PROTOCOL}://${HOST}:${PORT}/`);
-    console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-  });
 };
 
 startServer();

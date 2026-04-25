@@ -3,6 +3,8 @@ const Expense = require("../models/Expense");
 const Purchase = require("../models/Purchase");
 const DailyFloat = require("../models/DailyFloat");
 const DailyRequest = require("../models/DailyRequest");
+const InventoryMovement = require("../models/InventoryMovement");
+const Item = require("../models/Item");
 const { Op } = require("sequelize");
 const Department = require('../models/Department');
 
@@ -102,7 +104,40 @@ module.exports = {
         res.json({ success: true, data: data.map(r => ({ ...r.toJSON(), department: deptMap[r.departmentId] || 'Other' })) });
       } catch (err) { res.status(500).json({ success: false, error: err.message }); }
     },
-    create: createHandler(DailyReport).create,
+    create: async (req, res) => {
+      const t = await require("../config/db").sequelize.transaction();
+      try {
+        const body = { ...req.body };
+        if (req.user) {
+          body.userId = req.user.id;
+          body.createdBy = req.user.name;
+        }
+        const data = await DailyReport.create(body, { transaction: t });
+
+        // Update Inventory if item exists
+        const item = await Item.findOne({ where: { name: body.service } });
+        if (item) {
+          item.currentStock = parseFloat(item.currentStock) - parseFloat(body.quantity || 1);
+          await item.save({ transaction: t });
+          
+          await InventoryMovement.create({
+            itemId: item.id,
+            type: 'OUT',
+            quantity: body.quantity || 1,
+            reason: 'Sale',
+            referenceId: data.id,
+            recordedBy: req.user?.name || 'System',
+            departmentId: body.departmentId
+          }, { transaction: t });
+        }
+
+        await t.commit();
+        res.status(201).json({ success: true, data });
+      } catch (err) {
+        await t.rollback();
+        res.status(500).json({ success: false, error: err.message });
+      }
+    },
     update: createHandler(DailyReport).update,
     delete: createHandler(DailyReport).delete,
   },
@@ -209,7 +244,40 @@ module.exports = {
         res.json({ success: true, data: data.map(p => ({ ...p.toJSON(), department: deptMap[p.departmentId] || 'Other' })) });
       } catch (err) { res.status(500).json({ success: false, error: err.message }); }
     },
-    create: createHandler(Purchase).create,
+    create: async (req, res) => {
+      const t = await require("../config/db").sequelize.transaction();
+      try {
+        const body = { ...req.body };
+        if (req.user) {
+          body.userId = req.user.id;
+          body.createdBy = req.user.name;
+        }
+        const data = await Purchase.create(body, { transaction: t });
+
+        // Update Inventory if item exists
+        const item = await Item.findOne({ where: { name: body.description } });
+        if (item) {
+          item.currentStock = parseFloat(item.currentStock) + parseFloat(body.quantity || 1);
+          await item.save({ transaction: t });
+          
+          await InventoryMovement.create({
+            itemId: item.id,
+            type: 'IN',
+            quantity: body.quantity || 1,
+            reason: 'Purchase',
+            referenceId: data.id,
+            recordedBy: req.user?.name || 'System',
+            departmentId: body.departmentId
+          }, { transaction: t });
+        }
+
+        await t.commit();
+        res.status(201).json({ success: true, data });
+      } catch (err) {
+        await t.rollback();
+        res.status(500).json({ success: false, error: err.message });
+      }
+    },
     update: createHandler(Purchase).update,
     delete: createHandler(Purchase).delete,
   },
@@ -252,9 +320,10 @@ module.exports = {
   operations: {
     getAll: async (req, res) => {
       try {
-        const { date } = req.query;
+        const { date, start, end } = req.query;
         let where = {};
         if (date) where.date = date;
+        if (start && end) where.date = { [Op.between]: [start, end] };
         if (req.user && req.user.role !== "super_admin" && req.user.departmentId) {
           where.department_id = req.user.departmentId;
         }
@@ -293,8 +362,13 @@ module.exports = {
   tasks: {
     getAll: async (req, res) => {
       try {
+        const { start, end } = req.query;
+        const where = {};
+        if (start && end) {
+          where.createdAt = { [Op.between]: [start + " 00:00:00", end + " 23:59:59"] };
+        }
         const Task = require("../models/Task");
-        const data = await Task.findAll({ order: [['createdAt', 'DESC']] });
+        const data = await Task.findAll({ where, order: [['createdAt', 'DESC']] });
         res.json({ success: true, data });
       } catch (err) { res.status(500).json({ success: false, error: err.message }); }
     },
@@ -318,14 +392,61 @@ module.exports = {
   schedule: {
     getAll: async (req, res) => {
       try {
-        const { date } = req.query;
+        const { date, start, end } = req.query;
         let where = {};
         if (date) where.date = date;
+        if (start && end) where.date = { [Op.between]: [start, end] };
         const Operation = require("../models/Operation");
         // Schedule is basically operations with a time slot
         const data = await Operation.findAll({ where, order: [['startTime', 'ASC']] });
         res.json({ success: true, data });
       } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+    }
+  },
+  inventory: {
+    getAll: async (req, res) => {
+      try {
+        const items = await Item.findAll({ 
+          order: [['name', 'ASC']]
+        });
+        res.json({ success: true, data: items });
+      } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+    },
+    getMovements: async (req, res) => {
+      try {
+        const { start, end } = req.query;
+        const where = {};
+        if (start && end) where.date = { [Op.between]: [start, end] };
+        const data = await InventoryMovement.findAll({ 
+          where, 
+          include: [{ model: Item, attributes: ['name'] }],
+          order: [['createdAt', 'DESC']] 
+        });
+        res.json({ success: true, data });
+      } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+    },
+    adjust: async (req, res) => {
+      const t = await require("../config/db").sequelize.transaction();
+      try {
+        const { itemId, type, quantity, reason } = req.body;
+        const item = await Item.findByPk(itemId);
+        if (!item) return res.status(404).json({ success: false, error: "Item not found" });
+
+        if (type === 'IN') item.currentStock = parseFloat(item.currentStock) + parseFloat(quantity);
+        else item.currentStock = parseFloat(item.currentStock) - parseFloat(quantity);
+
+        await item.save({ transaction: t });
+        await InventoryMovement.create({
+          itemId, type, quantity, reason,
+          recordedBy: req.user?.name || 'System'
+        }, { transaction: t });
+
+        await t.commit();
+        res.json({ success: true, data: item });
+      } catch (err) {
+        await t.rollback();
+        res.status(500).json({ success: false, error: err.message });
+      }
     }
   }
 };

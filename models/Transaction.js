@@ -1,8 +1,7 @@
 const { DataTypes } = require("sequelize");
-const { sequelize } = require("../config/db");
 
-const Transaction = sequelize.define(
-  "Transaction",
+module.exports = (sequelize) => {
+  const Transaction = sequelize.define("Transaction",
   {
     id: {
       type: DataTypes.UUID,
@@ -24,7 +23,7 @@ const Transaction = sequelize.define(
       references: { model: 'departments', key: 'department_id' }
     },
     type: {
-      type: DataTypes.ENUM("Sale", "Expense"),
+      type: DataTypes.ENUM("Revenue", "Expense", "Asset", "Liability", "Equity"),
       allowNull: false,
     },
     amount: {type: DataTypes.DECIMAL(12, 2),
@@ -91,4 +90,7 @@ const Transaction = sequelize.define(
   },
 );
 
-module.exports = Transaction;
+
+
+  return Transaction;
+};

@@ -1,13 +1,13 @@
-const { DataTypes } = require('sequelize');
-const { sequelize } = require('../config/db');
-const bcrypt = require('bcryptjs');
+const { DataTypes } = require("sequelize");
 
-const Customer = sequelize.define('Customer', {
-  id: {
+module.exports = (sequelize) => {
+  const Customer = sequelize.define("Customer", {
+    id: {
       type: DataTypes.UUID,
       defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
       field: 'customer_id'
+    
     },
   departmentId: {
     type: DataTypes.UUID,
@@ -113,4 +113,7 @@ Customer.prototype.comparePassword = async function(candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password);
 };
 
-module.exports = Customer;
+
+
+  return Customer;
+};

@@ -1,12 +1,13 @@
-const { DataTypes } = require('sequelize');
-const { sequelize } = require('../config/db');
+const { DataTypes } = require("sequelize");
 
-const DailyReport = sequelize.define('DailyReport', {
-  id: {
+module.exports = (sequelize) => {
+  const DailyReport = sequelize.define("DailyReport", {
+    id: {
       type: DataTypes.UUID,
       defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
       field: 'report_id'
+    
     },
   userId: {
       type: DataTypes.UUID,
@@ -19,6 +20,12 @@ const DailyReport = sequelize.define('DailyReport', {
     field: 'department_id',
     allowNull: true,
     references: { model: 'departments', key: 'department_id' }
+  },
+  customerId: {
+    type: DataTypes.UUID,
+    field: 'customer_id',
+    allowNull: true,
+    references: { model: 'customers', key: 'customer_id' }
   },
   paymentMethod: {
     type: DataTypes.STRING,
@@ -69,7 +76,12 @@ const DailyReport = sequelize.define('DailyReport', {
     type: DataTypes.STRING,
     field: 'created_by'
   },
-  currency: DataTypes.STRING
+  currency: DataTypes.STRING,
+  unavailableItems: {
+    type: DataTypes.TEXT,
+    field: 'unavailable_items',
+    allowNull: true
+  }
 }, {
   tableName: 'daily_reports',
   timestamps: true,
@@ -81,4 +93,7 @@ const DailyReport = sequelize.define('DailyReport', {
     ],
 });
 
-module.exports = DailyReport;
+
+
+  return DailyReport;
+};

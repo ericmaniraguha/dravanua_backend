@@ -1,12 +1,14 @@
-const { DataTypes } = require('sequelize');
-const { sequelize } = require('../config/db');
+const { DataTypes } = require("sequelize");
 
-const Violation = sequelize.define('Violation', {
-  id: {
+module.exports = (sequelize) => {
+  const isSqlite = sequelize.getDialect() === 'sqlite';
+  const Violation = sequelize.define("Violation", {
+    id: {
       type: DataTypes.UUID,
       defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
       field: 'violation_id'
+    
     },
   userId: {
       type: DataTypes.UUID,
@@ -59,10 +61,13 @@ const Violation = sequelize.define('Violation', {
      type: DataTypes.STRING,
      field: 'device_info'
   },
-  geom: {
-    type: DataTypes.GEOMETRY('POINT', 4326),
-    allowNull: true
-  }
+  // Conditional geom — MySQL/MariaDB spatial support only (not supported by SQLite)
+  ...(isSqlite ? {} : {
+    geom: {
+      type: DataTypes.GEOMETRY('POINT'),
+      allowNull: true
+    }
+  })
 }, {
   tableName: 'attendance_violations',
   timestamps: true,
@@ -70,4 +75,7 @@ const Violation = sequelize.define('Violation', {
   updatedAt: false
 });
 
-module.exports = Violation;
+
+
+  return Violation;
+};

@@ -1,8 +1,7 @@
 const { DataTypes } = require("sequelize");
-const { sequelize } = require("../config/db");
 
-const OrgLoan = sequelize.define(
-  "OrgLoan",
+module.exports = (sequelize) => {
+  const OrgLoan = sequelize.define("OrgLoan",
   {
     id: {
       type: DataTypes.UUID,
@@ -61,4 +60,7 @@ const OrgLoan = sequelize.define(
   }
 );
 
-module.exports = OrgLoan;
+
+
+  return OrgLoan;
+};

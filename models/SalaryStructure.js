@@ -1,8 +1,7 @@
 const { DataTypes } = require("sequelize");
-const { sequelize } = require("../config/db");
 
-const SalaryStructure = sequelize.define(
-  "SalaryStructure",
+module.exports = (sequelize) => {
+  const SalaryStructure = sequelize.define("SalaryStructure",
   {
     id: {
       type: DataTypes.UUID,
@@ -63,4 +62,7 @@ const SalaryStructure = sequelize.define(
   }
 );
 
-module.exports = SalaryStructure;
+
+
+  return SalaryStructure;
+};
