@@ -1,5 +1,4 @@
-const Message = require("../models/Message");
-const AdminUser = require("../models/AdminUser");
+const { Message, AdminUser, Department } = require("../models");
 const { sendEmail } = require("../utils/sendEmail");
 
 // POST /api/v1/contact — Submit contact form (public)
@@ -12,7 +11,7 @@ const submitContact = async (req, res) => {
       return res.status(400).json({ error: "All fields are required" });
     }
 
-    const Department = require("../models/Department");
+
     let departmentId = null;
 
     // Naively map service subjects to department IDs for inbox sorting

@@ -1,12 +1,9 @@
-const DailyReport = require("../models/DailyReport");
-const Expense = require("../models/Expense");
-const Purchase = require("../models/Purchase");
-const DailyFloat = require("../models/DailyFloat");
-const DailyRequest = require("../models/DailyRequest");
-const InventoryMovement = require("../models/InventoryMovement");
-const Item = require("../models/Item");
+const { 
+  DailyReport, Expense, Purchase, DailyFloat, 
+  DailyRequest, InventoryMovement, Item, Department,
+  Operation, Task
+} = require("../models");
 const { Op } = require("sequelize");
-const Department = require('../models/Department');
 
 const resolveDepartment = async (body) => {
   if (body.department) {
@@ -98,7 +95,7 @@ module.exports = {
         if (currency && currency !== "all") where.currency = currency;
         if (req.user && req.user.role !== "super_admin" && req.user.departmentId) where.department_id = req.user.departmentId;
 
-        const Department = require("../models/Department");
+
         const deptMap = await Department.getNameMap();
         const data = await DailyReport.findAll({ where, order: [['date', 'DESC']] });
         res.json({ success: true, data: data.map(r => ({ ...r.toJSON(), department: deptMap[r.departmentId] || 'Other' })) });
@@ -160,7 +157,7 @@ module.exports = {
         const purchases = await Purchase.findAll({ where });
 
         // Get department names for filtering
-        const Department = require("../models/Department");
+
         const deptMap = await Department.getNameMap();
 
         // Normalize into a single ledger for "EXPENSES 2026" view
@@ -238,7 +235,7 @@ module.exports = {
         if (start && end) where.date = { [Op.between]: [start, end] };
         if (req.user && req.user.role !== "super_admin" && req.user.departmentId) where.department_id = req.user.departmentId;
 
-        const Department = require("../models/Department");
+
         const deptMap = await Department.getNameMap();
         const data = await Purchase.findAll({ where, order: [['date', 'DESC']] });
         res.json({ success: true, data: data.map(p => ({ ...p.toJSON(), department: deptMap[p.departmentId] || 'Other' })) });
@@ -289,7 +286,7 @@ module.exports = {
         if (start && end) where.date = { [Op.between]: [start, end] };
         if (req.user && req.user.role !== "super_admin" && req.user.departmentId) where.department_id = req.user.departmentId;
 
-        const Department = require("../models/Department");
+
         const deptMap = await Department.getNameMap();
         const data = await DailyFloat.findAll({ where, order: [['date', 'DESC']] });
         res.json({ success: true, data: data.map(f => ({ ...f.toJSON(), department: deptMap[f.departmentId] || 'Other' })) });
@@ -307,7 +304,7 @@ module.exports = {
         if (start && end) where.date = { [Op.between]: [start, end] };
         if (req.user && req.user.role !== "super_admin" && req.user.departmentId) where.department_id = req.user.departmentId;
 
-        const Department = require("../models/Department");
+
         const deptMap = await Department.getNameMap();
         const data = await DailyRequest.findAll({ where, order: [['date', 'DESC']] });
         res.json({ success: true, data: data.map(r => ({ ...r.toJSON(), department: deptMap[r.departmentId] || 'Other' })) });
@@ -327,14 +324,14 @@ module.exports = {
         if (req.user && req.user.role !== "super_admin" && req.user.departmentId) {
           where.department_id = req.user.departmentId;
         }
-        const Operation = require("../models/Operation");
+
         const data = await Operation.findAll({ where, order: [['startTime', 'ASC']] });
         res.json({ success: true, data });
       } catch (err) { res.status(500).json({ success: false, error: err.message }); }
     },
     create: async (req, res) => {
       try {
-        const Operation = require("../models/Operation");
+
         let body = { ...req.body };
         const data = await Operation.create(body);
         res.status(201).json({ success: true, data });
@@ -342,7 +339,7 @@ module.exports = {
     },
     update: async (req, res) => {
       try {
-        const Operation = require("../models/Operation");
+
         const item = await Operation.findByPk(req.params.id);
         if (!item) return res.status(404).json({ success: false, error: "Operation not found" });
         await item.update(req.body);
@@ -351,7 +348,7 @@ module.exports = {
     },
     delete: async (req, res) => {
       try {
-        const Operation = require("../models/Operation");
+
         const item = await Operation.findByPk(req.params.id);
         if (!item) return res.status(404).json({ success: false, error: "Operation not found" });
         await item.destroy();
@@ -367,21 +364,21 @@ module.exports = {
         if (start && end) {
           where.createdAt = { [Op.between]: [start + " 00:00:00", end + " 23:59:59"] };
         }
-        const Task = require("../models/Task");
+
         const data = await Task.findAll({ where, order: [['createdAt', 'DESC']] });
         res.json({ success: true, data });
       } catch (err) { res.status(500).json({ success: false, error: err.message }); }
     },
     create: async (req, res) => {
       try {
-        const Task = require("../models/Task");
+
         const data = await Task.create(req.body);
         res.status(201).json({ success: true, data });
       } catch (err) { res.status(500).json({ success: false, error: err.message }); }
     },
     delete: async (req, res) => {
       try {
-        const Task = require("../models/Task");
+
         const item = await Task.findByPk(req.params.id);
         if (!item) return res.status(404).json({ success: false, error: "Task not found" });
         await item.destroy();
@@ -396,7 +393,7 @@ module.exports = {
         let where = {};
         if (date) where.date = date;
         if (start && end) where.date = { [Op.between]: [start, end] };
-        const Operation = require("../models/Operation");
+
         // Schedule is basically operations with a time slot
         const data = await Operation.findAll({ where, order: [['startTime', 'ASC']] });
         res.json({ success: true, data });

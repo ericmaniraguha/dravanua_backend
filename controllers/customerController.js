@@ -1,5 +1,4 @@
-const Customer = require('../models/Customer');
-const Booking = require('../models/Booking');
+const { Customer, Booking } = require('../models');
 const jwt = require('jsonwebtoken');
 
 // POST /api/v1/customer/signup

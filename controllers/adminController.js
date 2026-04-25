@@ -362,7 +362,7 @@ const createUser = async (req, res) => {
     });
 
     // Send invitation email
-    const frontendUrl = process.env.FRONTEND_URL;
+    const frontendUrl = process.env.FRONTEND_URL || "https://dravanua.com";
     const signupUrl = `${frontendUrl}/admin/signup?email=${email}&code=${regCode}`;
 
     await sendEmail({
@@ -447,7 +447,7 @@ const resendCode = async (req, res) => {
     await user.save();
 
     // Send invitation email (re-using template)
-    const frontendUrl = process.env.FRONTEND_URL;
+    const frontendUrl = process.env.FRONTEND_URL || "https://dravanua.com";
     const confirmUrl = `${frontendUrl}/admin/signup?email=${user.email}&code=${regCode}`;
 
     await sendEmail({

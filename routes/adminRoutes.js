@@ -233,6 +233,9 @@ router.put("/bookings/:id", authMiddleware, upload.single("receipt"), updateBook
 router.delete("/bookings/:id", authMiddleware, deleteBooking);
 
 // Team Management
+router.get("/team", authMiddleware, getTeamMembers);
+router.post("/team", authMiddleware, isSuperAdmin, createTeamMember);
+router.put("/team/:id", authMiddleware, isSuperAdmin, updateTeamMember);
 router.delete("/team/:id", authMiddleware, isSuperAdmin, deleteTeamMember);
 
 // Partner & Collaboration Management
