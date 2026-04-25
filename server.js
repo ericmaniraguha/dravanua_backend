@@ -17,7 +17,7 @@ const itemRoutes = require("./routes/itemRoutes");
 
 const app = express();
 const cookieParser = require("cookie-parser");
-const PORT = process.env.DRAVANUA_PORT || process.env.BACKEND_PORT;
+const PORT = process.env.DRAVANUA_PORT || 8003;
 const API_PREFIX = process.env.API_V1_STR || "/api/v1";
 const BASE_URL = process.env.BASE_URL;
 
@@ -86,13 +86,34 @@ app.get(`${API_PREFIX}/health`, (req, res) => {
   res.status(200).json({ status: "OK", timestamp: new Date() });
 });
 
+// ROOT HEALTHCHECK (For Docker)
+app.get("/health", (req, res) => {
+  res.status(200).json({ status: "ok" });
+});
+
+app.get(`${API_PREFIX}/db-check`, async (req, res) => {
+  try {
+    await sequelize.authenticate();
+    res.status(200).json({ status: "OK", database: "Connected", timestamp: new Date() });
+  } catch (error) {
+    res.status(500).json({ status: "Error", database: "Disconnected", message: error.message });
+  }
+});
+
 // Database synchronization and server start
 const startServer = async () => {
   try {
     await connectDB();
+    
+    // Ensure database tables exist (Sync models)
+    console.log("🔄 Synchronizing database schema...");
+    await sequelize.sync({ alter: true });
+    console.log("✅ Database schema is up to date");
 
-    // Auto-provision Super Admin
-    const { AdminUser } = require("./models");
+    // Seed Core Data (Departments)
+    const { AdminUser, Department } = require("./models");
+    console.log("🌱 Verifying core data (Departments)...");
+    await Department.seedDefaults();
     const adminEmail = process.env.ADMIN_EMAIL || "admin@dravanua.com";
     const adminExists = await AdminUser.findOne({ where: { email: adminEmail } });
 

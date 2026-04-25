@@ -1,12 +1,13 @@
-const { DataTypes } = require('sequelize');
-const { sequelize } = require('../config/db');
+const { DataTypes } = require("sequelize");
 
-const ReceiptDocument = sequelize.define('ReceiptDocument', {
-  id: {
+module.exports = (sequelize) => {
+  const ReceiptDocument = sequelize.define("ReceiptDocument", {
+    id: {
       type: DataTypes.UUID,
       defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
       field: 'document_id'
+    
     },
   title: {type: DataTypes.STRING,
       field: "rd_title",
@@ -78,4 +79,7 @@ const ReceiptDocument = sequelize.define('ReceiptDocument', {
   underscored: true
 });
 
-module.exports = ReceiptDocument;
+
+
+  return ReceiptDocument;
+};

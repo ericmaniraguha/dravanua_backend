@@ -1,13 +1,14 @@
-const { DataTypes } = require('sequelize');
-const { sequelize } = require('../config/db');
-const isSqlite = sequelize.getDialect() === 'sqlite';
+const { DataTypes } = require("sequelize");
 
-const LocationHistory = sequelize.define('LocationHistory', {
-  id: {
+module.exports = (sequelize) => {
+  const isSqlite = sequelize.getDialect() === 'sqlite';
+  const LocationHistory = sequelize.define("LocationHistory", {
+    id: {
       type: DataTypes.UUID,
       defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
       field: 'location_id'
+    
     },
   userId: {
       type: DataTypes.UUID,
@@ -85,4 +86,7 @@ const LocationHistory = sequelize.define('LocationHistory', {
   }
 });
 
-module.exports = LocationHistory;
+
+
+  return LocationHistory;
+};

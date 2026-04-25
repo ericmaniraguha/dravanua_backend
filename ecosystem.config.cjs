@@ -9,7 +9,7 @@ module.exports = {
       exec_mode: "cluster",
       env: {
         NODE_ENV: process.env.NODE_ENV || "production",
-        BACKEND_PORT: process.env.BACKEND_PORT
+        DRAVANUA_PORT: process.env.DRAVANUA_PORT || 8003
       },
       env_production: {
         NODE_ENV: "production",

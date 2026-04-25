@@ -1,8 +1,7 @@
 const { DataTypes } = require("sequelize");
-const { sequelize } = require("../config/db");
 
-const PayrollRecord = sequelize.define(
-  "PayrollRecord",
+module.exports = (sequelize) => {
+  const PayrollRecord = sequelize.define("PayrollRecord",
   {
     id: {
       type: DataTypes.UUID,
@@ -91,4 +90,7 @@ const PayrollRecord = sequelize.define(
   }
 );
 
-module.exports = PayrollRecord;
+
+
+  return PayrollRecord;
+};
