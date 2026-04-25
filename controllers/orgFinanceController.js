@@ -15,7 +15,13 @@ exports.getOverview = async (req, res) => {
 // --- LOANS ---
 exports.getLoans = async (req, res) => {
   try {
-    const loans = await OrgLoan.findAll({ order: [['createdAt', 'DESC']] });
+    const { start, end } = req.query;
+    const { Op } = require("sequelize");
+    const where = {};
+    if (start && end) {
+      where.createdAt = { [Op.between]: [start + " 00:00:00", end + " 23:59:59"] };
+    }
+    const loans = await OrgLoan.findAll({ where, order: [['createdAt', 'DESC']] });
     res.json({ success: true, data: loans });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -85,7 +91,13 @@ exports.recordLoanRepayment = async (req, res) => {
 // --- SAVINGS ---
 exports.getSavings = async (req, res) => {
   try {
-    const savings = await OrgSavings.findAll({ order: [['createdAt', 'DESC']] });
+    const { start, end } = req.query;
+    const { Op } = require("sequelize");
+    const where = {};
+    if (start && end) {
+      where.createdAt = { [Op.between]: [start + " 00:00:00", end + " 23:59:59"] };
+    }
+    const savings = await OrgSavings.findAll({ where, order: [['createdAt', 'DESC']] });
     res.json({ success: true, data: savings });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -130,7 +142,7 @@ exports.processSavingsTransaction = async (req, res) => {
 
     // Ledger Entry
     const trans = await Transaction.create({
-      type: type === 'Savings Deposit' ? 'Expense' : 'Sale', // Deposit into savings is cash outflow from oper, Withdrawal is inflow
+      type: type === 'Savings Deposit' ? 'Expense' : 'Revenue', // Deposit into savings is cash outflow from oper, Withdrawal is inflow
       amount,
       category: 'Savings Movement',
       client: savings.bankName,

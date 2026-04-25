@@ -49,6 +49,22 @@ const Operation = sequelize.define(
     onTime: {
       type: DataTypes.BOOLEAN,
       defaultValue: true,
+    },
+    customerId: {
+      type: DataTypes.UUID,
+      field: 'customer_id',
+      allowNull: true,
+      references: { model: 'customers', key: 'customer_id' }
+    },
+    customerName: {
+      type: DataTypes.STRING,
+      field: 'customer_name',
+      allowNull: true,
+    },
+    serviceType: {
+      type: DataTypes.STRING,
+      field: 'service_type',
+      allowNull: true,
     }
   },
   {

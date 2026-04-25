@@ -7,11 +7,12 @@ exports.getSalaryStructures = async (req, res) => {
   try {
     const structures = await AdminUser.findAll({
       attributes: ['id', 'name', 'role', 'email'],
-      include: [{ model: SalaryStructure }]
+      include: [{ model: SalaryStructure, as: 'SalaryStructure' }]
     });
     res.json({ success: true, data: structures });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    console.error("❌ Payroll structures error:", error);
+    res.status(500).json({ success: false, error: error.message, stack: error.stack });
   }
 };
 
@@ -81,10 +82,14 @@ exports.updateAdvanceStatus = async (req, res) => {
 // --- PAYROLL GENERATION & MANAGEMENT ---
 exports.getPayrollRecords = async (req, res) => {
   try {
-    const { month, year } = req.query;
+    const { month, year, start, end } = req.query;
     const where = {};
     if (month) where.month = parseInt(month);
     if (year) where.year = parseInt(year);
+    
+    if (start && end) {
+       where.createdAt = { [Op.between]: [start + " 00:00:00", end + " 23:59:59"] };
+    }
 
     const records = await PayrollRecord.findAll({
       where,
@@ -107,7 +112,7 @@ exports.generatePayroll = async (req, res) => {
 
     const staff = await AdminUser.findAll({
       where: { isActive: true },
-      include: [{ model: SalaryStructure, required: true }]
+      include: [{ model: SalaryStructure, as: 'SalaryStructure', required: true }]
     });
 
     const startDate = new Date(year, month - 1, 1);

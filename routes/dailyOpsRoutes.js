@@ -20,4 +20,9 @@ resources.forEach(r => {
   if (r.handler.delete) router.delete(`/${r.path}/:id`, r.handler.delete);
 });
 
+// Inventory Special Methods
+router.get('/inventory/status', dailyOps.inventory.getAll);
+router.get('/inventory/movements', dailyOps.inventory.getMovements);
+router.post('/inventory/adjust', dailyOps.inventory.adjust);
+
 module.exports = router;

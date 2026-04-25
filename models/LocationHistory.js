@@ -1,5 +1,6 @@
 const { DataTypes } = require('sequelize');
 const { sequelize } = require('../config/db');
+const isSqlite = sequelize.getDialect() === 'sqlite';
 
 const LocationHistory = sequelize.define('LocationHistory', {
   id: {
@@ -44,10 +45,13 @@ const LocationHistory = sequelize.define('LocationHistory', {
      type: DataTypes.STRING,
      field: 'action_type'
   },
-  geom: {
-    type: DataTypes.GEOMETRY('POINT'),
-    allowNull: true
-  }
+  // Conditional geom — MySQL/MariaDB spatial support only (not supported by SQLite)
+  ...(isSqlite ? {} : {
+    geom: {
+      type: DataTypes.GEOMETRY('POINT'),
+      allowNull: true
+    }
+  })
 }, {
   tableName: 'gps_location_history',
   timestamps: false,
@@ -61,6 +65,7 @@ const LocationHistory = sequelize.define('LocationHistory', {
   ],
   hooks: {
     afterSync: async () => {
+      if (isSqlite) return; // SPATIAL INDEX not supported in SQLite
       try {
         const [rows] = await sequelize.query(
           `SELECT INDEX_NAME FROM INFORMATION_SCHEMA.STATISTICS

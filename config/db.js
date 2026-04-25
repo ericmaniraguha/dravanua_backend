@@ -64,8 +64,8 @@ else if (dialect === "mysql" || dialect === "mariadb") {
     process.env.DRAVANUA_DB_USER,
     process.env.DRAVANUA_DB_PASSWORD,
     {
-      host: process.env.DRAVANUA_DB_HOST || "localhost",
-      port: process.env.DRAVANUA_DB_PORT || 3306,
+      host: process.env.DRAVANUA_DB_HOST,
+      port: process.env.DRAVANUA_DB_PORT,
       dialect: dialect,
       logging: false,
 
@@ -97,34 +97,6 @@ else if (dialect === "mysql" || dialect === "mariadb") {
   );
 }
 
-// ========== MYSQL CONFIGURATION ==========
-else if (dialect === "mysql") {
-  console.log("📦 Using MySQL database");
-  sequelize = new Sequelize(
-    process.env.DRAVANUA_DB_NAME,
-    process.env.DRAVANUA_DB_USER,
-    process.env.DRAVANUA_DB_PASSWORD,
-    {
-      host: process.env.DRAVANUA_DB_HOST || "localhost",
-      port: process.env.DRAVANUA_DB_PORT || 5432,
-      dialect: "mysql",
-      logging: process.env.NODE_ENV !== "production" ? console.log : false,
-
-      pool: {
-        max: 5,
-        min: 0,
-        acquire: 30000,
-        idle: 10000,
-      },
-
-      define: {
-        timestamps: true,
-        underscored: true,
-      },
-    },
-  );
-}
-
 // ========== UNSUPPORTED DIALECT ==========
 else {
   throw new Error(
@@ -143,8 +115,7 @@ const connectDB = async () => {
     if (dialect !== "sqlite" && process.env.NODE_ENV !== "production") {
       console.log(
         `   Host: ${process.env.DRAVANUA_DB_HOST}:${
-          process.env.DRAVANUA_DB_PORT ||
-          (dialect === "mysql" || dialect === "mariadb" ? 3306 : 5432)
+          process.env.DRAVANUA_DB_PORT || "Default Dialect Port"
         }`,
       );
       console.log(`   Database: ${process.env.DRAVANUA_DB_NAME}`);

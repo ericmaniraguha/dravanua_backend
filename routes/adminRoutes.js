@@ -59,6 +59,11 @@ const {
   verifyAttendance,
   adminRefresh,
   adminLogout,
+  getPartners,
+  createPartner,
+  updatePartner,
+  deletePartner,
+  getPublicPartners,
 } = require("../controllers/adminController");
 const {
   authMiddleware,
@@ -96,7 +101,7 @@ router.get("/me", authMiddleware, async (req, res) => {
     const { AdminUser, Department } = require("../models/index");
     const user = await AdminUser.findByPk(req.user.id, {
       attributes: ["id", "name", "email", "role", "isActive", "departmentId"],
-      include: [{ model: Department, attributes: ["name"] }]
+      include: [{ model: Department, attributes: ["name", "code"] }]
     });
 
     if (!user || user.role === "user" || !user.isActive) {
@@ -107,6 +112,7 @@ router.get("/me", authMiddleware, async (req, res) => {
     const userData = user.toJSON();
     if (userData.Department) {
       userData.department = userData.Department.name;
+      userData.deptCode = userData.Department.code;
     }
 
     res.json({ success: true, data: userData });
@@ -227,10 +233,13 @@ router.put("/bookings/:id", authMiddleware, upload.single("receipt"), updateBook
 router.delete("/bookings/:id", authMiddleware, deleteBooking);
 
 // Team Management
-router.get("/team", authMiddleware, getTeamMembers);
-router.post("/team", authMiddleware, isSuperAdmin, createTeamMember);
-router.put("/team/:id", authMiddleware, isSuperAdmin, updateTeamMember);
 router.delete("/team/:id", authMiddleware, isSuperAdmin, deleteTeamMember);
+
+// Partner & Collaboration Management
+router.get("/partners", authMiddleware, getPartners);
+router.post("/partners", authMiddleware, isSuperAdmin, createPartner);
+router.put("/partners/:id", authMiddleware, isSuperAdmin, updatePartner);
+router.delete("/partners/:id", authMiddleware, isSuperAdmin, deletePartner);
 
 // GPS & Location Settings
 router.get("/office-location", authMiddleware, getOfficeLocation);
@@ -276,5 +285,9 @@ router.use("/subscriptions", authMiddleware, subscriptionRoutes);
 // Reminder / Schedule / Plan Management
 const reminderRoutes = require("./reminderRoutes");
 router.use("/reminders", authMiddleware, reminderRoutes);
+
+// Item / Service Management
+const itemRoutes = require("./itemRoutes");
+router.use("/items", authMiddleware, itemRoutes);
 
 module.exports = router;

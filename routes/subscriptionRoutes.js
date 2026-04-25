@@ -12,7 +12,16 @@ const { Subscription, AdminUser } = require("../models");
 // ─── GET ALL SUBSCRIPTIONS ──────────────────────────────────────────────────
 router.get("/", async (req, res) => {
   try {
+    const { start, end } = req.query;
+    const where = {};
+    if (start && end) {
+      where.createdAt = {
+        [Op.between]: [start + " 00:00:00", end + " 23:59:59"],
+      };
+    }
+
     const subs = await Subscription.findAll({
+      where,
       order: [["next_billing_date", "ASC"]],
       include: [{ model: AdminUser, attributes: ["id", "name", "email"] }],
     });
@@ -158,7 +167,7 @@ router.post("/send-alert/:id", async (req, res) => {
       text: `Your subscription "${sub.name}" (${sub.plan || sub.category}) is due on ${sub.nextBillingDate}. Amount: ${Number(sub.cost).toLocaleString()} ${sub.currency}.`,
       html: `
         <div style="font-family:'Inter',sans-serif;max-width:600px;margin:0 auto;border:1px solid #e2e8f0;border-radius:16px;overflow:hidden;">
-          <div style="background:linear-gradient(135deg,#1B5E20,#2E7D32);padding:24px;color:white;">
+          <div style="background:linear-gradient(135deg,#32FC05,#2E7D32);padding:24px;color:white;">
             <h2 style="margin:0;font-size:18px;">🔔 Subscription Renewal Alert</h2>
             <p style="opacity:0.85;margin:8px 0 0;font-size:13px;">DRAVANUA HUB — Financial Operations</p>
           </div>
@@ -168,7 +177,7 @@ router.post("/send-alert/:id", async (req, res) => {
               <tr><td style="padding:10px 0;color:#64748b;font-weight:600;">Plan</td><td>${sub.plan || "—"}</td></tr>
               <tr><td style="padding:10px 0;color:#64748b;font-weight:600;">Category</td><td>${sub.category}</td></tr>
               <tr><td style="padding:10px 0;color:#64748b;font-weight:600;">Billing Cycle</td><td>${sub.billingCycle}</td></tr>
-              <tr><td style="padding:10px 0;color:#64748b;font-weight:600;">Amount Due</td><td style="font-weight:800;color:#1B5E20;">${Number(sub.cost).toLocaleString()} ${sub.currency}</td></tr>
+              <tr><td style="padding:10px 0;color:#64748b;font-weight:600;">Amount Due</td><td style="font-weight:800;color:#32FC05;">${Number(sub.cost).toLocaleString()} ${sub.currency}</td></tr>
               <tr><td style="padding:10px 0;color:#64748b;font-weight:600;">Next Billing</td><td style="font-weight:800;color:#dc2626;">${sub.nextBillingDate}</td></tr>
               <tr><td style="padding:10px 0;color:#64748b;font-weight:600;">Auto Renewal</td><td>${sub.autoRenewal ? "✅ Yes" : "❌ No"}</td></tr>
               <tr><td style="padding:10px 0;color:#64748b;font-weight:600;">Payment Method</td><td>${sub.paymentMethod || "—"}</td></tr>

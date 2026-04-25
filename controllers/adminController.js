@@ -17,6 +17,8 @@ const {
   LocationHistory,
   Department,
   TeamMember,
+  Subscription,
+  Partner,
 } = require("../models/index");
 const jwt = require("jsonwebtoken");
 const { sendEmail } = require("../utils/sendEmail");
@@ -107,16 +109,21 @@ const adminLogin = async (req, res) => {
 
     // Generate Access Token (Short: 15min)
     const accessToken = jwt.sign(
-      { id: user.id, name: user.name, role: user.role, departmentId: user.departmentId },
+      {
+        id: user.id,
+        name: user.name,
+        role: user.role,
+        departmentId: user.departmentId,
+      },
       process.env.JWT_SECRET || "dravanua-access-secret",
-      { expiresIn: process.env.JWT_EXPIRES_IN || "8h" }
+      { expiresIn: process.env.JWT_EXPIRES_IN || "8h" },
     );
 
     // Generate Refresh Token (Long: 7 days)
     const refreshToken = jwt.sign(
       { id: user.id },
       process.env.JWT_REFRESH_SECRET || "dravanua-refresh-secret",
-      { expiresIn: "7d" }
+      { expiresIn: "7d" },
     );
 
     // Store refresh token in DB
@@ -154,7 +161,10 @@ const adminRefresh = async (req, res) => {
     const token = req.cookies.refreshToken;
     if (!token) return res.status(401).json({ error: "No refresh token" });
 
-    const decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET || "dravanua-refresh-secret");
+    const decoded = jwt.verify(
+      token,
+      process.env.JWT_REFRESH_SECRET || "dravanua-refresh-secret",
+    );
     const user = await AdminUser.findByPk(decoded.id);
 
     if (!user || user.refreshToken !== token) {
@@ -163,9 +173,14 @@ const adminRefresh = async (req, res) => {
 
     // Generate new Access Token
     const accessToken = jwt.sign(
-      { id: user.id, name: user.name, role: user.role, departmentId: user.departmentId },
+      {
+        id: user.id,
+        name: user.name,
+        role: user.role,
+        departmentId: user.departmentId,
+      },
       process.env.JWT_SECRET || "dravanua-access-secret",
-      { expiresIn: process.env.JWT_EXPIRES_IN || "8h" }
+      { expiresIn: process.env.JWT_EXPIRES_IN || "8h" },
     );
 
     res.json({ success: true, token: accessToken });
@@ -310,9 +325,7 @@ const getUsers = async (req, res) => {
     const users = await AdminUser.findAll({
       where,
       attributes: { exclude: ["password", "confirmationToken"] },
-      include: [
-        { model: Department, attributes: ["id", "name", "code"] },
-      ],
+      include: [{ model: Department, attributes: ["id", "name", "code"] }],
       order: [
         ["role", "ASC"], // Super admins first
         ["name", "ASC"],
@@ -321,7 +334,9 @@ const getUsers = async (req, res) => {
     res.json({ success: true, data: users });
   } catch (error) {
     console.error("Fetch Users Error:", error);
-    res.status(500).json({ error: "Failed to fetch users", details: error.message });
+    res
+      .status(500)
+      .json({ error: "Failed to fetch users", details: error.message });
   }
 };
 
@@ -347,7 +362,7 @@ const createUser = async (req, res) => {
     });
 
     // Send invitation email
-    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+    const frontendUrl = process.env.FRONTEND_URL;
     const signupUrl = `${frontendUrl}/admin/signup?email=${email}&code=${regCode}`;
 
     await sendEmail({
@@ -355,12 +370,12 @@ const createUser = async (req, res) => {
       subject: "Welcome to DRAVANUA HUB - Complete Your Registration",
       html: `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #eee; border-radius: 10px; overflow: hidden;">
-      <div style="background: #1B5E20; padding: 20px; text-align: center; color: white;">
+      <div style="background: #32FC05; padding: 20px; text-align: center; color: white;">
         <h1 style="margin: 0; font-size: 24px;">DRAVANUA HUB</h1>
         <p style="margin: 10px 0 0; font-size: 14px; opacity: 0.9;">Account Activation</p>
       </div>
       <div style="padding: 30px; line-height: 1.6; color: #333;">
-        <h2 style="color: #1B5E20; margin-top: 0;">Welcome, ${name}!</h2>
+        <h2 style="color: #32FC05; margin-top: 0;">Welcome, ${name}!</h2>
         <p>Thank you for joining DRAVANUA HUB. We're excited to have you on our team!</p>
         
         <p>Your administrative account has been created successfully. To complete your registration and activate your account, please consult your **System Administrator** or **Manager** to receive your unique activation code.</p>
@@ -371,7 +386,7 @@ const createUser = async (req, res) => {
         </div>
 
         <div style="text-align: center; margin: 30px 0;">
-          <a href="${signupUrl}" style="background: #1B5E20; color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 15px; display: inline-block; box-shadow: 0 2px 4px rgba(27, 94, 32, 0.2);">
+          <a href="${signupUrl}" style="background: #32FC05; color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 15px; display: inline-block; box-shadow: 0 2px 4px rgba(27, 94, 32, 0.2);">
             Complete Registration
           </a>
         </div>
@@ -432,7 +447,7 @@ const resendCode = async (req, res) => {
     await user.save();
 
     // Send invitation email (re-using template)
-    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+    const frontendUrl = process.env.FRONTEND_URL;
     const confirmUrl = `${frontendUrl}/admin/signup?email=${user.email}&code=${regCode}`;
 
     await sendEmail({
@@ -440,11 +455,11 @@ const resendCode = async (req, res) => {
       subject: "New Activation Code - DRAVANUA HUB",
       html: `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #eee; border-radius: 10px; overflow: hidden;">
-      <div style="background: #1B5E20; padding: 20px; text-align: center; color: white;">
+      <div style="background: #32FC05; padding: 20px; text-align: center; color: white;">
         <h1 style="margin: 0; font-size: 24px;">DRAVANUA HUB</h1>
       </div>
       <div style="padding: 30px; line-height: 1.6; color: #333;">
-        <h2 style="color: #1B5E20; margin-top: 0;">Hello, ${user.name}!</h2>
+        <h2 style="color: #32FC05; margin-top: 0;">Hello, ${user.name}!</h2>
         <p>A new activation code has been generated for your administrative account. For security reasons, this code will not be sent via email.</p>
         
         <div style="background: #fdf2f2; padding: 20px; border-radius: 8px; margin: 25px 0; border: 1px dashed #ef4444; text-align: center;">
@@ -454,7 +469,7 @@ const resendCode = async (req, res) => {
 
         <p>Click the link below to activate your account once you receive the code from your manager:</p>
         <div style="text-align: center; margin: 30px 0;">
-          <a href="${confirmUrl}" style="background: #1B5E20; color: white; padding: 12px 25px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Proceed to Activation</a>
+          <a href="${confirmUrl}" style="background: #32FC05; color: white; padding: 12px 25px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Proceed to Activation</a>
         </div>
       </div>
       <div style="background: #f4f4f4; padding: 15px; text-align: center; color: #888; font-size: 12px;">
@@ -476,7 +491,8 @@ const updateUser = async (req, res) => {
     if (!user) return res.status(404).json({ error: "User not found" });
 
     const oldStatus = user.isActive;
-    await user.update(req.body);
+    const { id: _, ...updateData } = req.body;
+    await user.update(updateData);
 
     // Notify user if status changed
     if (req.body.isActive !== undefined && req.body.isActive !== oldStatus) {
@@ -505,10 +521,12 @@ const updateUser = async (req, res) => {
         "USER_MGMT",
         `Changed status of ${user.name} to ${statusText}`,
       );
-      
+
       // Auto-update associated TeamMember profile visibility
       if (req.body.isActive === false) {
-        const teamMember = await TeamMember.findOne({ where: { adminUserId: user.id } });
+        const teamMember = await TeamMember.findOne({
+          where: { adminUserId: user.id },
+        });
         if (teamMember) {
           await teamMember.update({ isHired: false });
         }
@@ -525,10 +543,10 @@ const deleteUser = async (req, res) => {
   try {
     const user = await AdminUser.findByPk(req.params.id);
     if (!user) return res.status(404).json({ error: "User not found" });
-    
+
     // Also delete associated public profile
     await TeamMember.destroy({ where: { adminUserId: user.id } });
-    
+
     await user.destroy();
     res.json({ success: true, message: "User deleted" });
   } catch (error) {
@@ -575,14 +593,26 @@ const updateModule = async (req, res) => {
 // GET /api/v1/admin/performance
 const getPerformanceStats = async (req, res) => {
   try {
+    const { start, end } = req.query;
+    const { Op } = require("sequelize");
+    const where = {};
+    if (start && end) {
+      where.createdAt = {
+        [Op.between]: [start + " 00:00:00", end + " 23:59:59"],
+      };
+    }
+
     const logs = await ActivityLog.findAll({
+      where,
       include: [{ model: Department, attributes: ["id", "name"] }],
       order: [["createdAt", "DESC"]],
-      limit: 200,
+      limit: 1000,
     });
 
-    const allDepartments = await Department.findAll({ where: { isActive: true } });
-    const transactions = await Transaction.findAll();
+    const allDepartments = await Department.findAll({
+      where: { isActive: true },
+    });
+    const transactions = await Transaction.findAll({ where });
 
     // Grouping logic for stats by User
     const statsByUser = {};
@@ -613,7 +643,7 @@ const getPerformanceStats = async (req, res) => {
       const uId = t.userId;
       if (uId && statsByUser[uId]) {
         const amt = parseFloat(t.amount || 0);
-        if (t.type === "Sale") {
+        if (t.type === "Revenue") {
           statsByUser[uId].income += amt;
           statsByUser[uId].sales += 1;
         } else if (t.type === "Expense") {
@@ -628,7 +658,7 @@ const getPerformanceStats = async (req, res) => {
       const deptTrans = transactions.filter((t) => t.departmentId === dept.id);
 
       const income = deptTrans
-        .filter((t) => t.type === "Sale")
+        .filter((t) => t.type === "Revenue")
         .reduce((sum, t) => sum + parseFloat(t.amount || 0), 0);
       const expenses = deptTrans
         .filter((t) => t.type === "Expense")
@@ -826,7 +856,11 @@ const getAttendance = async (req, res) => {
         staffCode: data.AdminUser ? data.AdminUser.staffCode : "N/A",
         uuid: data.AdminUser ? data.AdminUser.id : null,
         departmentId: data.departmentId,
-        department: data.Department ? data.Department.name : (data.AdminUser && data.AdminUser.Department ? data.AdminUser.Department.name : "General"),
+        department: data.Department
+          ? data.Department.name
+          : data.AdminUser && data.AdminUser.Department
+            ? data.AdminUser.Department.name
+            : "General",
         clockIn: data.clockIn,
         clockOut: data.clockOut,
         totalHours: data.totalHours,
@@ -861,42 +895,21 @@ const clockIn = async (req, res) => {
     const today = new Date().toISOString().split("T")[0];
     const now = new Date();
 
-    // Support both naming conventions (lat/lon vs gps_lat/gps_lon)
-    const lat = req.body.gps_lat || req.body.lat;
-    const lon = req.body.gps_lon || req.body.lon;
-    const accuracy = req.body.gps_accuracy || req.body.accuracy;
-    const { altitude, speed, heading } = req.body;
-
-    if (!lat || !lon) {
-      return res.status(400).json({ success: false, message: "GPS coordinates are required for attendance verification." });
-    }
-
-    // Get Office Location for distance verification
-    const office = await OfficeLocation.findOne({ where: { is_active: true } });
-    const distanceToOffice = office
-      ? calculateDistance(lat, lon, office.latitude, office.longitude)
-      : null;
-
-    if (office && distanceToOffice !== null) {
-      const maxRadius = office.buffer_radius || office.allowed_radius || 150;
-      if (distanceToOffice > maxRadius) {
-        return res.status(403).json({ 
-          success: false, 
-          message: `Access Denied: You are ${Math.round(distanceToOffice)}m away from the office. The maximum allowed operating radius is ${maxRadius}m.` 
-        });
-      }
-    }
+    // No longer requiring GPS coordinates for fingerprint-based attendance.
+    const lat = 0;
+    const lon = 0;
+    const distanceToOffice = 0;
 
     // Check if an existing record exists for today
     const existingRecord = await Attendance.findOne({
       where: { userId: req.user.id, date: today },
     });
 
-    if (existingRecord && existingRecord.status === 'on-duty') {
+    if (existingRecord && existingRecord.status === "on-duty") {
       return res.status(400).json({
         success: false,
         message: "You are already clocked in.",
-        code: "ALREADY_CHECKED_IN"
+        code: "ALREADY_CHECKED_IN",
       });
     }
 
@@ -906,9 +919,8 @@ const clockIn = async (req, res) => {
       await existingRecord.update({
         lastClockIn: now.toISOString(),
         status: "on-duty",
-        gpsLat: lat,
-        gpsLon: lon,
-        distanceFromOffice: distanceToOffice
+        checkInMethod: "FINGERPRINT",
+        isVerified: true,
       });
       record = existingRecord;
     } else {
@@ -925,26 +937,14 @@ const clockIn = async (req, res) => {
         date: today,
         clockIn: now,
         lastClockIn: now.toISOString(),
-        gpsLat: lat,
-        gpsLon: lon,
-        distanceFromOffice: distanceToOffice,
         status: "on-duty",
+        checkInMethod: "FINGERPRINT",
+        isVerified: true,
       });
     }
 
-    // Save detailed GPS history
-    await LocationHistory.create({
-      userId: req.user.id,
-      attendanceId: record.id,
-      gpsLat: lat || 0,
-      gpsLon: lon || 0,
-      accuracy: accuracy || null,
-      altitude: altitude || null,
-      speed: speed || null,
-      heading: heading || null,
-      distanceFromOffice: distanceToOffice,
-      actionType: "CLOCK_IN",
-    });
+    // Optional: Log action as fingerprint capture
+    console.log(`[ATTENDANCE] Fingerprint capture for user ${req.user.id} at ${now}`);
 
     res.status(201).json({ success: true, data: record });
   } catch (error) {
@@ -961,27 +961,20 @@ const clockOut = async (req, res) => {
   try {
     const today = new Date().toISOString().split("T")[0];
     const record = await Attendance.findOne({
-      where: { userId: req.user.id, date: today, status: 'on-duty' },
+      where: { userId: req.user.id, date: today, status: "on-duty" },
     });
     if (!record)
-      return res
-        .status(404)
-        .json({ success: false, message: "No active clock-in session found for today." });
+      return res.status(404).json({
+        success: false,
+        message: "No active clock-in session found for today.",
+      });
 
-    // Support both naming conventions
-    const lat = req.body.gps_lat || req.body.lat;
-    const lon = req.body.gps_lon || req.body.lon;
-    const accuracy = req.body.gps_accuracy || req.body.accuracy;
-    const { altitude, speed, heading } = req.body;
-
-    if (!lat || !lon) {
-      return res.status(400).json({ success: false, message: "GPS coordinates are required for attendance verification." });
-    }
+    const lat = 0;
+    const lon = 0;
+    const distanceToOffice = 0;
 
     const clockOutTime = new Date();
-    // Use lastClockIn for interval, fallback to clockIn
     const sessionStartTime = new Date(record.lastClockIn || record.clockIn);
-    
     const timeDiffMs = clockOutTime - sessionStartTime;
     const sessionHours = parseFloat((timeDiffMs / (1000 * 60 * 60)).toFixed(2));
 
@@ -991,45 +984,16 @@ const clockOut = async (req, res) => {
 
     const newTotalHours = parseFloat(((record.totalHours || 0) + sessionHours).toFixed(2));
 
-    // Calc distance
-    const office = await OfficeLocation.findOne({ where: { is_active: true } });
-    const distanceToOffice = office
-      ? calculateDistance(lat, lon, office.latitude, office.longitude)
-      : record.distanceFromOffice;
-
-    if (office && distanceToOffice !== null) {
-      const maxRadius = office.buffer_radius || office.allowed_radius || 150;
-      if (distanceToOffice > maxRadius) {
-        return res.status(403).json({ 
-          success: false, 
-          message: `Access Denied: You are ${Math.round(distanceToOffice)}m away from the office. The maximum allowed operating radius is ${maxRadius}m.` 
-        });
-      }
-    }
-
     await record.update({
       clockOut: clockOutTime,
       totalHours: newTotalHours,
       status: "off-duty",
-      lastClockIn: null, // Reset for next session
-      gpsLat: lat || record.gpsLat,
-      gpsLon: lon || record.gpsLon,
-      distanceFromOffice: distanceToOffice
+      lastClockIn: null, 
+      checkInMethod: "FINGERPRINT",
+      isVerified: true,
     });
 
-    // Save detailed GPS history
-    await LocationHistory.create({
-      userId: req.user.id,
-      attendanceId: record.id,
-      gpsLat: lat || record.gpsLat || 0,
-      gpsLon: lon || record.gpsLon || 0,
-      accuracy: accuracy || null,
-      altitude: altitude || null,
-      speed: speed || null,
-      heading: heading || null,
-      distanceFromOffice: distanceToOffice,
-      actionType: "CLOCK_OUT",
-    });
+    console.log(`[ATTENDANCE] Fingerprint logout for user ${req.user.id} at ${clockOutTime}`);
 
     res.status(200).json({ success: true, data: record });
   } catch (error) {
@@ -1048,13 +1012,13 @@ const getOfficeLocation = async (req, res) => {
       where: { is_active: true },
     });
     if (!location) {
-      // Default to Kigali location if none exists
+      // Default to Kigali/Runda location if none exists
       return res.json({
         success: true,
         data: {
-          office_name: "DRAVANUA HQ",
-          latitude: -1.9441,
-          longitude: 30.0619,
+          office_name: "DRAVANUA HUB",
+          latitude: -1.9667,
+          longitude: 29.9854,
           allowed_radius: 100,
         },
       });
@@ -1065,10 +1029,38 @@ const getOfficeLocation = async (req, res) => {
   }
 };
 
+const getPublicOfficeLocation = async (req, res) => {
+  try {
+    const location = await OfficeLocation.findOne({
+      where: { is_active: true },
+      attributes: ['office_name', 'latitude', 'longitude', 'address', 'city', 'country']
+    });
+    if (!location) {
+      return res.json({
+        success: true,
+        data: {
+          office_name: "DRAVANUA HUB",
+          latitude: -1.9667,
+          longitude: 29.9854,
+          address: "Ruyenzi Modern Market",
+          city: "Kigali",
+          country: "Rwanda"
+        }
+      });
+    }
+    res.json({ success: true, data: location });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Failed to fetch location" });
+  }
+};
+
 const getOfficeLocations = async (req, res) => {
   try {
     const locations = await OfficeLocation.findAll({
-      order: [['is_active', 'DESC'], ['office_name', 'ASC']]
+      order: [
+        ["is_active", "DESC"],
+        ["office_name", "ASC"],
+      ],
     });
     res.json({ success: true, data: locations });
   } catch (error) {
@@ -1078,7 +1070,15 @@ const getOfficeLocations = async (req, res) => {
 
 const updateOfficeLocation = async (req, res) => {
   try {
-    const { office_name, latitude, longitude, allowed_radius, country, city, address } = req.body;
+    const {
+      office_name,
+      latitude,
+      longitude,
+      allowed_radius,
+      country,
+      city,
+      address,
+    } = req.body;
     let location = await OfficeLocation.findOne({ where: { is_active: true } });
 
     if (location) {
@@ -1089,7 +1089,7 @@ const updateOfficeLocation = async (req, res) => {
         allowed_radius,
         country,
         city,
-        address
+        address,
       });
     } else {
       location = await OfficeLocation.create({
@@ -1125,11 +1125,11 @@ const getGallery = async (req, res) => {
       where,
       order: [["createdAt", "DESC"]],
     });
-    
+
     // Map imageUrl to image for frontend component compatibility
-    const mappedItems = items.map(item => ({
-       ...item.toJSON(),
-       image: item.imageUrl
+    const mappedItems = items.map((item) => ({
+      ...item.toJSON(),
+      image: item.imageUrl,
     }));
 
     res.status(200).json({ success: true, data: mappedItems });
@@ -1172,7 +1172,7 @@ const updateGalleryItem = async (req, res) => {
         .json({ success: false, message: "Item not found" });
     const updateData = {
       ...req.body,
-      imageUrl: req.body.image || item.imageUrl
+      imageUrl: req.body.image || item.imageUrl,
     };
     await item.update(updateData);
     await logAction(req.user, "UPDATE", "Gallery", `Updated ${item.title}`);
@@ -1235,7 +1235,17 @@ const replyToMessage = async (req, res) => {
 // --- CUSTOMER CONTROLLERS ---
 const getCustomers = async (req, res) => {
   try {
+    const { start, end } = req.query;
+    const where = {};
+    if (start && end) {
+      const { Op } = require("sequelize");
+      where.createdAt = {
+        [Op.between]: [start + " 00:00:00", end + " 23:59:59"],
+      };
+    }
+
     const customers = await Customer.findAll({
+      where,
       order: [["createdAt", "DESC"]],
     });
     res.status(200).json({ success: true, data: customers });
@@ -1302,23 +1312,28 @@ const deleteCustomer = async (req, res) => {
 // --- ANALYTICS CONTROLLER ---
 const getAnalytics = async (req, res) => {
   try {
-    const { period, start, end, departmentId, currency } = req.query;
-    const { Subscription } = require("../models");
+    const { period, start, end, department, departmentId, currency } =
+      req.query;
     const now = new Date();
+    const queryDept = departmentId || department;
 
     // ── ROLE-BASED ACCESS CONTROL ────────────────────────────────────────────
     // Determine the caller's privilege level from the JWT
-    const callerRole       = req.user.role;       // 'super_admin' | 'service_admin' | 'user'
-    const callerDeptId     = req.user.departmentId;
-    const isPrivileged     = callerRole === 'super_admin' || callerRole === 'service_admin';
-    const isSuperAdmin     = callerRole === 'super_admin';
+    const callerRole = req.user.role; // 'super_admin' | 'service_admin' | 'user'
+    const callerDeptId = req.user.departmentId;
+    const isPrivileged =
+      callerRole === "super_admin" || callerRole === "service_admin";
+    const isSuperAdmin = callerRole === "super_admin";
 
     // Normal users (role='user') or service_admin without super privileges:
     //   • See today only
     //   • See their department only
     // super_admin: no restrictions — full access to all periods and departments.
     let startDate = null;
-    let effectiveDeptId = departmentId || null;  // query param default
+    let effectiveDeptId =
+      queryDept === "All Units" || queryDept === "all" || !queryDept
+        ? null
+        : queryDept;
 
     if (!isSuperAdmin) {
       // Enforce today-only for non-super-admin roles
@@ -1327,7 +1342,7 @@ const getAnalytics = async (req, res) => {
       startDate = todayStart;
 
       // Enforce department scope: normal users can ONLY see their own dept
-      if (callerRole === 'user') {
+      if (callerRole === "user") {
         effectiveDeptId = callerDeptId || effectiveDeptId;
       }
       // service_admin: can see all departments (within today only)
@@ -1335,9 +1350,9 @@ const getAnalytics = async (req, res) => {
       // super_admin: honour query params as usual
       if (start && end) {
         startDate = new Date(start);
-      } else if (period === '7d') {
+      } else if (period === "7d") {
         startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-      } else if (period === '30d') {
+      } else if (period === "30d") {
         startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
       }
       effectiveDeptId = departmentId || null;
@@ -1347,15 +1362,21 @@ const getAnalytics = async (req, res) => {
     const endDate =
       start && end && isSuperAdmin
         ? new Date(new Date(end).setHours(23, 59, 59, 999))
-        : new Date(now.setHours(23, 59, 59, 999));
+        : new Date(new Date(now).setHours(23, 59, 59, 999));
 
     const dateRange = startDate
-      ? { [require('sequelize').Op.between]: [startDate, endDate] }
+      ? { [require("sequelize").Op.between]: [startDate, endDate] }
       : {};
 
     const attendance = await Attendance.findAll({
       where: startDate
-        ? { date: { [require('sequelize').Op.gte]: startDate.toISOString().split('T')[0] } }
+        ? {
+            date: {
+              [require("sequelize").Op.gte]: startDate
+                .toISOString()
+                .split("T")[0],
+            },
+          }
         : {},
     });
 
@@ -1394,31 +1415,68 @@ const getAnalytics = async (req, res) => {
       opsWhere.currency = currency;
     }
 
-    const transactions = await Transaction.findAll({ where: transWhere });
-    const bookings = await Booking.findAll({
-      where: landingWhere,
-      include: [{ model: Customer, attributes: ["id", "name", "email"] }],
-    });
-    const dailyOpsReports = await DailyReport.findAll({ where: opsWhere });
-    const dailyOpsExpenses = await Expense.findAll({ where: opsWhere });
-    const dailyOpsPurchases = await Purchase.findAll({ where: opsWhere });
-    const subscriptions = await Subscription.findAll({ where: { status: 'Active' } });
+    let transactions = [];
+    let bookings = [];
+    let dailyOpsReports = [];
+    let dailyOpsExpenses = [];
+    let dailyOpsPurchases = [];
+
+    try {
+      transactions = await Transaction.findAll({ where: transWhere });
+    } catch (e) {
+      console.warn("Analytics: Transaction fetch failed", e.message);
+    }
+    try {
+      bookings = await Booking.findAll({
+        where: landingWhere,
+        include: [{ model: Customer, attributes: ["id", "name", "email"] }],
+      });
+    } catch (e) {
+      console.warn("Analytics: Booking fetch failed", e.message);
+    }
+    try {
+      dailyOpsReports = await DailyReport.findAll({ where: opsWhere });
+    } catch (e) {
+      console.warn("Analytics: DailyReport fetch failed", e.message);
+    }
+    try {
+      dailyOpsExpenses = await Expense.findAll({ where: opsWhere });
+    } catch (e) {
+      console.warn("Analytics: Expense fetch failed", e.message);
+    }
+    try {
+      dailyOpsPurchases = await Purchase.findAll({ where: opsWhere });
+    } catch (e) {
+      console.warn("Analytics: Purchase fetch failed", e.message);
+    }
+
+    let subscriptions = [];
+    try {
+      subscriptions = await Subscription.findAll({
+        where: { status: "Active" },
+      });
+    } catch (sErr) {
+      console.warn(
+        "Analytics: Subscription table not found or query failed",
+        sErr.message,
+      );
+    }
 
     // Calculate recurring subscription burn
     let subscriptionBurn = 0;
-    subscriptions.forEach(s => {
+    subscriptions.forEach((s) => {
       const cost = parseFloat(s.cost) || 0;
-      if (s.billingCycle === 'Weekly') subscriptionBurn += cost * 4;
-      else if (s.billingCycle === 'Monthly') subscriptionBurn += cost;
-      else if (s.billingCycle === 'Quarterly') subscriptionBurn += cost / 3;
-      else if (s.billingCycle === 'Yearly') subscriptionBurn += cost / 12;
+      if (s.billingCycle === "Weekly") subscriptionBurn += cost * 4;
+      else if (s.billingCycle === "Monthly") subscriptionBurn += cost;
+      else if (s.billingCycle === "Quarterly") subscriptionBurn += cost / 3;
+      else if (s.billingCycle === "Yearly") subscriptionBurn += cost / 12;
     });
 
     // 1. Sales & Income Statistics
     const incomeStats = {
       revenue:
         transactions
-          .filter((t) => t.type === "Sale")
+          .filter((t) => t.type === "Revenue")
           .reduce((sum, t) => sum + (t.amount || 0), 0) +
         dailyOpsReports.reduce(
           (sum, r) => sum + (parseFloat(r.totalPrice) || 0),
@@ -1439,10 +1497,9 @@ const getAnalytics = async (req, res) => {
         subscriptionBurn,
       bookingsCount: bookings.length,
       subscriptionBurn,
-      pendingRevenue:
-        bookings
-          .filter((b) => b.status === "pending")
-          .reduce((sum, b) => sum + (parseFloat(b.totalAmount) || 0), 0),
+      pendingRevenue: bookings
+        .filter((b) => b.status === "pending")
+        .reduce((sum, b) => sum + (parseFloat(b.totalAmount) || 0), 0),
       pendingCount: bookings.filter((b) => b.status === "pending").length,
     };
 
@@ -1481,7 +1538,7 @@ const getAnalytics = async (req, res) => {
 
     // Track income from sales
     transactions
-      .filter((t) => t.type === "Sale")
+      .filter((t) => t.type === "Revenue")
       .forEach((t) => {
         const staffName = t.recordedBy || "System";
         if (!staffMap[staffName])
@@ -1546,15 +1603,23 @@ const getAnalytics = async (req, res) => {
       .slice(0, 5);
 
     // 4. Departmental breakdown
-    const deptNames = await Department.getNameMap();
+    let deptNames = {};
+    try {
+      deptNames = await Department.getNameMap();
+    } catch (dErr) {
+      console.warn("Analytics: Department map failed", dErr.message);
+    }
+
     const categoryRevenue = {};
-    Object.values(deptNames).forEach((name) => {
-      categoryRevenue[name] = 0;
-    });
+    if (deptNames && Object.keys(deptNames).length > 0) {
+      Object.values(deptNames).forEach((name) => {
+        categoryRevenue[name] = 0;
+      });
+    }
     categoryRevenue["Other"] = 0;
 
     transactions
-      .filter((t) => t.type === "Sale")
+      .filter((t) => t.type === "Revenue")
       .forEach((t) => {
         // Map integer departmentId back to name for grouping
         const cat = deptNames[t.departmentId] || "Other";
@@ -1588,18 +1653,34 @@ const getAnalytics = async (req, res) => {
           subscriptionBurn: incomeStats.subscriptionBurn,
           pendingRevenue: incomeStats.pendingRevenue,
           pendingCount: incomeStats.pendingCount,
-          avgTicket: incomeStats.revenue / Math.max(transactions.length + bookings.length, 1),
-          operationalStability: (incomeStats.revenue / Math.max(incomeStats.expenses, 1)).toFixed(2),
-          yieldPercentage: incomeStats.revenue > 0 ? ((incomeStats.revenue - incomeStats.expenses) / incomeStats.revenue * 100).toFixed(1) : 0,
+          avgTicket:
+            incomeStats.revenue /
+              Math.max(transactions.length + bookings.length, 1) || 0,
+          operationalStability:
+            (incomeStats.revenue / Math.max(incomeStats.expenses, 1)).toFixed(
+              2,
+            ) || "0.00",
+          yieldPercentage:
+            incomeStats.revenue > 0
+              ? (
+                  ((incomeStats.revenue - incomeStats.expenses) /
+                    incomeStats.revenue) *
+                  100
+                ).toFixed(1)
+              : 0,
         },
         // Inform the frontend what scope was applied
         accessScope: {
-          role:       callerRole,
-          scope:      isSuperAdmin ? 'full' : 'today',
-          department: effectiveDeptId || callerDeptId || 'all',
+          role: callerRole,
+          scope: isSuperAdmin ? "full" : "today",
+          department: effectiveDeptId || callerDeptId || "all",
           dateRange: {
-            from: startDate ? startDate.toISOString().split('T')[0] : 'all-time',
-            to:   endDate   ? endDate.toISOString().split('T')[0]   : new Date().toISOString().split('T')[0],
+            from: startDate
+              ? startDate.toISOString().split("T")[0]
+              : "all-time",
+            to: endDate
+              ? endDate.toISOString().split("T")[0]
+              : new Date().toISOString().split("T")[0],
           },
         },
       },
@@ -1644,11 +1725,20 @@ exports.getTransactions = getTransactions;
 
 const createTransaction = async (req, res) => {
   try {
-    const { 
-      type, amount, category, paymentMethod, 
-      client, description, date, currency,
-      department_id, user_id, recorded_by,
-      financialInstitution, accountNumber
+    const {
+      type,
+      amount,
+      category,
+      paymentMethod,
+      client,
+      description,
+      date,
+      currency,
+      department_id,
+      user_id,
+      recorded_by,
+      financialInstitution,
+      accountNumber,
     } = req.body;
 
     const transData = {
@@ -1664,7 +1754,7 @@ const createTransaction = async (req, res) => {
       departmentId: department_id || null,
       recordedBy: recorded_by || req.user.name,
       financialInstitution,
-      accountNumber
+      accountNumber,
     };
 
     // Auto-resolve department ID if explicitly missing but category matches a department
@@ -1679,6 +1769,11 @@ const createTransaction = async (req, res) => {
       req.user.departmentId !== "all"
     ) {
       transData.departmentId = req.user.departmentId;
+    }
+
+    const restrictedTypes = ["Asset", "Liability", "Equity"];
+    if (restrictedTypes.includes(type) && req.user.role !== "super_admin") {
+      return res.status(403).json({ success: false, message: "Only super admins can record assets, liabilities, or equity." });
     }
 
     const transaction = await Transaction.create(transData);
@@ -1706,13 +1801,8 @@ const deleteTransaction = async (req, res) => {
 
     const auditTrail = `Deleted ${transaction.type}: ${transaction.category} (${transaction.amount} ${transaction.currency}) recorded by ${transaction.recordedBy}`;
     await transaction.destroy();
-    
-    await logAction(
-      req.user,
-      "DELETE",
-      "Finance",
-      auditTrail
-    );
+
+    await logAction(req.user, "DELETE", "Finance", auditTrail);
 
     res
       .status(200)
@@ -1725,16 +1815,27 @@ const deleteTransaction = async (req, res) => {
 const updateTransaction = async (req, res) => {
   try {
     const { id } = req.params;
-    const { 
-      type, amount, category, paymentMethod, 
-      client, description, date, currency,
-      department_id, user_id, recorded_by,
-      financialInstitution, accountNumber
+    const {
+      type,
+      amount,
+      category,
+      paymentMethod,
+      client,
+      description,
+      date,
+      currency,
+      department_id,
+      user_id,
+      recorded_by,
+      financialInstitution,
+      accountNumber,
     } = req.body;
 
     const transaction = await Transaction.findByPk(id);
     if (!transaction) {
-      return res.status(404).json({ success: false, message: "Transaction not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Transaction not found" });
     }
 
     const updateData = {
@@ -1743,14 +1844,19 @@ const updateTransaction = async (req, res) => {
       category: category || transaction.category,
       paymentMethod: paymentMethod || transaction.paymentMethod,
       client: client !== undefined ? client : transaction.client,
-      description: description !== undefined ? description : transaction.description,
+      description:
+        description !== undefined ? description : transaction.description,
       date: date || transaction.date,
       currency: currency || transaction.currency,
       userId: user_id || transaction.userId,
       departmentId: department_id || transaction.departmentId,
       recordedBy: recorded_by || transaction.recordedBy,
-      financialInstitution: financialInstitution !== undefined ? financialInstitution : transaction.financialInstitution,
-      accountNumber: accountNumber !== undefined ? accountNumber : transaction.accountNumber
+      financialInstitution:
+        financialInstitution !== undefined
+          ? financialInstitution
+          : transaction.financialInstitution,
+      accountNumber:
+        accountNumber !== undefined ? accountNumber : transaction.accountNumber,
     };
 
     // Auto-resolve department ID if category changed
@@ -1759,18 +1865,20 @@ const updateTransaction = async (req, res) => {
     }
 
     await transaction.update(updateData);
-    
+
     await logAction(
       req.user,
       "UPDATE",
       "Finance",
-      `Updated ${transaction.type}: ${transaction.category} (${transaction.amount} ${transaction.currency})`
+      `Updated ${transaction.type}: ${transaction.category} (${transaction.amount} ${transaction.currency})`,
     );
 
     res.json({ success: true, data: transaction });
   } catch (error) {
     console.error("Update Transaction Error:", error);
-    res.status(500).json({ success: false, message: "Failed to update transaction" });
+    res
+      .status(500)
+      .json({ success: false, message: "Failed to update transaction" });
   }
 };
 
@@ -1809,7 +1917,15 @@ exports.getBookings = getBookings;
 
 const createBooking = async (req, res) => {
   try {
-    const { customerName, customerEmail, phoneNumber, countryCode, countryName, location, ...restBody } = req.body;
+    const {
+      customerName,
+      customerEmail,
+      phoneNumber,
+      countryCode,
+      countryName,
+      location,
+      ...restBody
+    } = req.body;
     let customerId = null;
 
     if (customerEmail || customerName) {
@@ -1818,13 +1934,13 @@ const createBooking = async (req, res) => {
         customer = await Customer.findOne({ where: { email: customerEmail } });
       }
       if (!customer && customerName) {
-         customer = await Customer.create({
-            name: customerName,
-            email: customerEmail || null,
-            phone: phoneNumber || null,
-            countryCode: countryCode || "+250",
-            countryName: countryName || "Rwanda"
-         });
+        customer = await Customer.create({
+          name: customerName,
+          email: customerEmail || null,
+          phone: phoneNumber || null,
+          countryCode: countryCode || "+250",
+          countryName: countryName || "Rwanda",
+        });
       }
       if (customer) {
         customerId = customer.id;
@@ -1853,7 +1969,9 @@ const createBooking = async (req, res) => {
     res.status(201).json({ success: true, data: booking });
   } catch (error) {
     console.error("Booking Error:", error);
-    res.status(500).json({ success: false, message: "Booking failed: " + error.message });
+    res
+      .status(500)
+      .json({ success: false, message: "Booking failed: " + error.message });
   }
 };
 
@@ -1875,7 +1993,7 @@ const updateBooking = async (req, res) => {
     };
 
     if (req.file) {
-       updateData.receiptUrl = req.file.filename;
+      updateData.receiptUrl = req.file.filename;
     }
 
     await booking.update(updateData);
@@ -2069,18 +2187,18 @@ const forgotPassword = async (req, res) => {
       subject: "Password Reset Code - DRAVANUA HUB",
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #eee; border-radius: 10px; overflow: hidden;">
-          <div style="background: #1B5E20; padding: 20px; text-align: center; color: white;">
+          <div style="background: #32FC05; padding: 20px; text-align: center; color: white;">
             <h1 style="margin: 0; font-size: 24px;">DRAVANUA HUB</h1>
             <p style="margin: 10px 0 0; font-size: 14px; opacity: 0.9;">Password Reset Request</p>
           </div>
           
           <div style="padding: 30px; line-height: 1.6; color: #333;">
-            <h2 style="color: #1B5E20; margin-top: 0;">Hello ${user.name},</h2>
+            <h2 style="color: #32FC05; margin-top: 0;">Hello ${user.name},</h2>
             <p>We received a request to reset the password for your DRAVANUA HUB account.</p>
             
-            <div style="background: #f9f9f9; padding: 20px; border-radius: 8px; margin: 25px 0; text-align: center; border-left: 4px solid #1B5E20;">
+            <div style="background: #f9f9f9; padding: 20px; border-radius: 8px; margin: 25px 0; text-align: center; border-left: 4px solid #32FC05;">
               <p style="margin: 0 0 10px; font-size: 14px; color: #64748b; font-weight: 600;">🔐 Your Password Reset Code:</p>
-              <p style="margin: 0; color: #1B5E20; font-size: 32px; font-weight: bold; letter-spacing: 8px; font-family: 'Courier New', monospace;">${resetCode}</p>
+              <p style="margin: 0; color: #32FC05; font-size: 32px; font-weight: bold; letter-spacing: 8px; font-family: 'Courier New', monospace;">${resetCode}</p>
             </div>
 
             <div style="background: #fff3cd; border: 1px solid #ffc107; padding: 15px; border-radius: 8px; margin: 25px 0;">
@@ -2143,17 +2261,17 @@ const resetPassword = async (req, res) => {
       subject: "Password Successfully Reset - DRAVANUA HUB",
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #eee; border-radius: 10px; overflow: hidden;">
-          <div style="background: #1B5E20; padding: 20px; text-align: center; color: white;">
+          <div style="background: #32FC05; padding: 20px; text-align: center; color: white;">
             <h1 style="margin: 0; font-size: 24px;">DRAVANUA HUB</h1>
             <p style="margin: 10px 0 0; font-size: 14px; opacity: 0.9;">Password Reset Confirmation</p>
           </div>
           
           <div style="padding: 30px; line-height: 1.6; color: #333;">
-            <h2 style="color: #1B5E20; margin-top: 0;">Hello ${user.name},</h2>
+            <h2 style="color: #32FC05; margin-top: 0;">Hello ${user.name},</h2>
             <p>Your password has been successfully reset.</p>
             
-            <div style="background: #e8f5e9; padding: 20px; border-radius: 8px; margin: 25px 0; text-align: center; border-left: 4px solid #1B5E20;">
-              <p style="margin: 0; color: #1B5E20; font-size: 18px; font-weight: 600;">✓ Password Updated Successfully</p>
+            <div style="background: #e8f5e9; padding: 20px; border-radius: 8px; margin: 25px 0; text-align: center; border-left: 4px solid #32FC05;">
+              <p style="margin: 0; color: #32FC05; font-size: 18px; font-weight: 600;">✓ Password Updated Successfully</p>
               <p style="margin: 10px 0 0; font-size: 13px; color: #2d5a27;">You can now log in with your new password.</p>
             </div>
 
@@ -2211,7 +2329,7 @@ const getDropboxFiles = async (req, res) => {
         name: "Studio_Shoot_RAW_001.jpg",
         size: "12.4 MB",
         path: "/studio/shoot1",
-        category: "Studio",
+        category: "Creative Studio",
         client: "John K.",
         date: new Date(),
       },
@@ -2235,13 +2353,26 @@ const getDropboxFiles = async (req, res) => {
       },
     ];
 
-    // Filter by department
+    const { start, end } = req.query;
     let filteredFiles = files;
+
+    if (start && end) {
+      const s = new Date(start + " 00:00:00");
+      const e = new Date(end + " 23:59:59");
+      filteredFiles = filteredFiles.filter((f) => {
+        const d = new Date(f.date);
+        return d >= s && d <= e;
+      });
+    }
+
+    // Filter by department
     if (req.user.role !== "super_admin" && req.user.departmentId) {
       const Department = require("../models/Department");
       const deptNames = await Department.getNameMap();
       const currentDeptName = deptNames[req.user.departmentId];
-      filteredFiles = files.filter((f) => f.category === currentDeptName);
+      filteredFiles = filteredFiles.filter(
+        (f) => f.category === currentDeptName,
+      );
     }
 
     res.status(200).json({ success: true, data: filteredFiles });
@@ -2288,7 +2419,7 @@ const sendContract = async (req, res) => {
     const html = `
   <div style="font-family: sans-serif; max-width: 650px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
     <!-- Header -->
-    <div style="background: #1B5E20; padding: 30px; color: white; text-align: center;">
+    <div style="background: #32FC05; padding: 30px; color: white; text-align: center;">
       <h1 style="margin: 0; font-size: 24px;">Official Service Agreement</h1>
       <p style="margin: 10px 0 0; opacity: 0.9; font-size: 14px;">DRAVANUA HUB • Contract ${contractData.contractNumber}</p>
       <p style="margin: 5px 0 0; opacity: 0.8; font-size: 12px;">Date: ${new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</p>
@@ -2297,12 +2428,12 @@ const sendContract = async (req, res) => {
 
     <div style="padding: 30px; line-height: 1.6; color: #1e293b;">
       <!-- Greeting -->
-      <h2 style="color: #1B5E20; margin-top: 0;">Hello ${contractData.clientName},</h2>
+      <h2 style="color: #32FC05; margin-top: 0;">Hello ${contractData.clientName},</h2>
       <p>Please find the official service agreement for your upcoming <strong>${contractData.eventType}</strong> session scheduled for <strong>${contractData.eventDate || "TBD"}</strong>.</p>
 
       <!-- Client Information -->
-      <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin: 25px 0; border-left: 4px solid #1B5E20;">
-        <h3 style="margin-top: 0; font-size: 14px; text-transform: uppercase; color: #1B5E20; letter-spacing: 0.5px;">Client Information</h3>
+      <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin: 25px 0; border-left: 4px solid #32FC05;">
+        <h3 style="margin-top: 0; font-size: 14px; text-transform: uppercase; color: #32FC05; letter-spacing: 0.5px;">Client Information</h3>
         <table style="width: 100%;">
           <tr><td style="padding: 5px 0; color: #64748b; width: 120px;">Client Name:</td><td style="font-weight: 500;">${contractData.clientName}</td></tr>
           <tr><td style="padding: 5px 0; color: #64748b;">Email:</td><td>${contractData.email}</td></tr>
@@ -2312,8 +2443,8 @@ const sendContract = async (req, res) => {
       </div>
 
       <!-- Project Scope -->
-      <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin: 25px 0; border-left: 4px solid #1B5E20;">
-        <h3 style="margin-top: 0; font-size: 14px; text-transform: uppercase; color: #1B5E20; letter-spacing: 0.5px;">Project Scope</h3>
+      <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin: 25px 0; border-left: 4px solid #32FC05;">
+        <h3 style="margin-top: 0; font-size: 14px; text-transform: uppercase; color: #32FC05; letter-spacing: 0.5px;">Project Scope</h3>
         <table style="width: 100%;">
           <tr><td style="padding: 5px 0; color: #64748b; width: 120px;">Event Type:</td><td style="font-weight: 500;">${contractData.eventType}</td></tr>
           <tr><td style="padding: 5px 0; color: #64748b;">Event Date:</td><td>${contractData.eventDate || "TBD"}</td></tr>
@@ -2322,13 +2453,13 @@ const sendContract = async (req, res) => {
       </div>
 
       <!-- Financial Breakdown -->
-      <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin: 25px 0; border-left: 4px solid #1B5E20;">
-        <h3 style="margin-top: 0; font-size: 14px; text-transform: uppercase; color: #1B5E20; letter-spacing: 0.5px;">Financial Breakdown</h3>
+      <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin: 25px 0; border-left: 4px solid #32FC05;">
+        <h3 style="margin-top: 0; font-size: 14px; text-transform: uppercase; color: #32FC05; letter-spacing: 0.5px;">Financial Breakdown</h3>
         
         <!-- Service Items -->
         <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px;">
           <thead>
-            <tr style="background: #1B5E20; color: white;">
+            <tr style="background: #32FC05; color: white;">
               <th style="padding: 10px; text-align: left; font-size: 12px;">DESCRIPTION</th>
               <th style="padding: 10px; text-align: right; font-size: 12px;">PRICE (${contractData.currency})</th>
             </tr>
@@ -2357,16 +2488,16 @@ const sendContract = async (req, res) => {
             <td style="padding: 10px; font-weight: 600; color: #c62828;">Deposit Paid:</td>
             <td style="padding: 10px; text-align: right; font-weight: 600; color: #c62828;">-${totals.deposit.toLocaleString()} ${contractData.currency}</td>
           </tr>
-          <tr style="background: #fff9c4; border-top: 2px solid #1B5E20;">
+          <tr style="background: #fff9c4; border-top: 2px solid #32FC05;">
             <td style="padding: 12px; font-weight: bold; font-size: 16px;">Balance Due:</td>
-            <td style="padding: 12px; text-align: right; font-weight: bold; font-size: 18px; color: #1B5E20;">${totals.balance.toLocaleString()} ${contractData.currency}</td>
+            <td style="padding: 12px; text-align: right; font-weight: bold; font-size: 18px; color: #32FC05;">${totals.balance.toLocaleString()} ${contractData.currency}</td>
           </tr>
         </table>
       </div>
 
       <!-- Terms & Conditions -->
-      <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin: 25px 0; border-left: 4px solid #1B5E20;">
-        <h3 style="margin-top: 0; font-size: 14px; text-transform: uppercase; color: #1B5E20; letter-spacing: 0.5px;">Terms & Conditions</h3>
+      <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin: 25px 0; border-left: 4px solid #32FC05;">
+        <h3 style="margin-top: 0; font-size: 14px; text-transform: uppercase; color: #32FC05; letter-spacing: 0.5px;">Terms & Conditions</h3>
         <div style="font-size: 13px; color: #475569; line-height: 1.8;">
           <p style="margin: 5px 0;"><strong>Standard Terms & Conditions apply.</strong></p>
           <ol style="margin: 10px 0; padding-left: 20px;">
@@ -2390,12 +2521,12 @@ const sendContract = async (req, res) => {
         
         <div style="display: flex; justify-content: space-between; margin-top: 30px;">
           <div style="text-align: center; flex: 1;">
-            <div style="border-top: 1px solid #1B5E20; width: 200px; margin: 0 auto 5px;"></div>
+            <div style="border-top: 1px solid #32FC05; width: 200px; margin: 0 auto 5px;"></div>
             <p style="margin: 0; font-size: 12px; font-weight: 600;">${contractData.clientName}</p>
             <p style="margin: 0; font-size: 11px; color: #64748b;">Client Signature & Date</p>
           </div>
           <div style="text-align: center; flex: 1;">
-            <div style="border-top: 1px solid #1B5E20; width: 200px; margin: 0 auto 5px;"></div>
+            <div style="border-top: 1px solid #32FC05; width: 200px; margin: 0 auto 5px;"></div>
             <p style="margin: 0; font-size: 12px; font-weight: 600;">Authorised Representative</p>
             <p style="margin: 0; font-size: 11px; color: #64748b;">DRAVANUA STUDIO</p>
           </div>
@@ -2475,11 +2606,11 @@ const updateProfile = async (req, res) => {
 
 const getTeamMembers = async (req, res) => {
   try {
-    const team = await TeamMember.findAll({ 
+    const team = await TeamMember.findAll({
       order: [
-        ['order', 'ASC'], 
-        ['createdAt', 'ASC']
-      ] 
+        ["order", "ASC"],
+        ["createdAt", "ASC"],
+      ],
     });
     res.json({ success: true, data: team });
   } catch (error) {
@@ -2490,7 +2621,12 @@ const getTeamMembers = async (req, res) => {
 const createTeamMember = async (req, res) => {
   try {
     const member = await TeamMember.create(req.body);
-    await logAction(req.user, "CREATE", "Team", `Added team member ${member.name}`);
+    await logAction(
+      req.user,
+      "CREATE",
+      "Team",
+      `Added team member ${member.name}`,
+    );
     res.status(201).json({ success: true, data: member });
   } catch (error) {
     console.error("Create Team Error:", error);
@@ -2501,9 +2637,15 @@ const createTeamMember = async (req, res) => {
 const updateTeamMember = async (req, res) => {
   try {
     const member = await TeamMember.findByPk(req.params.id);
-    if (!member) return res.status(404).json({ error: "Team member not found" });
+    if (!member)
+      return res.status(404).json({ error: "Team member not found" });
     await member.update(req.body);
-    await logAction(req.user, "UPDATE", "Team", `Updated team member ${member.name}`);
+    await logAction(
+      req.user,
+      "UPDATE",
+      "Team",
+      `Updated team member ${member.name}`,
+    );
     res.json({ success: true, data: member });
   } catch (error) {
     res.status(500).json({ error: "Failed to update team member" });
@@ -2513,7 +2655,8 @@ const updateTeamMember = async (req, res) => {
 const deleteTeamMember = async (req, res) => {
   try {
     const member = await TeamMember.findByPk(req.params.id);
-    if (!member) return res.status(404).json({ error: "Team member not found" });
+    if (!member)
+      return res.status(404).json({ error: "Team member not found" });
     const name = member.name;
     await member.destroy();
     await logAction(req.user, "DELETE", "Team", `Deleted team member ${name}`);
@@ -2526,7 +2669,7 @@ const deleteTeamMember = async (req, res) => {
 const getDepartments = async (req, res) => {
   try {
     const departments = await Department.findAll({
-      order: [['name', 'ASC']]
+      order: [["name", "ASC"]],
     });
     res.json({ success: true, data: departments });
   } catch (error) {
@@ -2540,16 +2683,123 @@ const verifyAttendance = async (req, res) => {
     const { isVerified } = req.body;
     const att = await Attendance.findByPk(id);
     if (!att) return res.status(404).json({ error: "Attendance not found" });
-    
+
     await att.update({
       isVerified,
-      verifiedBy: req.user.id
+      verifiedBy: req.user.id,
     });
-    
-    await logAction(req.user, "VERIFY", "Attendance", `${isVerified ? 'Verified' : 'Unverified'} session for ${att.userName} on ${att.date}`);
+
+    await logAction(
+      req.user,
+      "VERIFY",
+      "Attendance",
+      `${isVerified ? "Verified" : "Unverified"} session for ${att.userName} on ${att.date}`,
+    );
     res.json({ success: true, data: att });
   } catch (error) {
     res.status(500).json({ error: "Failed to verify attendance" });
+  }
+};
+
+// ============================================
+// PARTNER & REFERENCE MANAGEMENT
+// ============================================
+const getPartners = async (req, res) => {
+  try {
+    const partners = await Partner.findAll({
+      order: [
+        ["order", "ASC"],
+        ["createdAt", "DESC"],
+      ],
+    });
+    res.status(200).json({ success: true, data: partners });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ success: false, message: "Failed to fetch partners" });
+  }
+};
+
+const createPartner = async (req, res) => {
+  try {
+    const partner = await Partner.create(req.body);
+    await logAction(
+      req.user,
+      "CREATE",
+      "Partners",
+      `Added new partner/reference: ${partner.name}`,
+    );
+    res.status(201).json({ success: true, data: partner });
+  } catch (error) {
+    console.error("Create Partner Error:", error);
+    res.status(500).json({ success: false, message: "Failed to create partner: " + error.message });
+  }
+};
+
+const updatePartner = async (req, res) => {
+  try {
+    const partner = await Partner.findByPk(req.params.id);
+    if (!partner)
+      return res
+        .status(404)
+        .json({ success: false, message: "Partner not found" });
+    
+    const oldName = partner.name;
+    await partner.update(req.body);
+    
+    await logAction(
+      req.user,
+      "UPDATE",
+      "Partners",
+      `Updated partner details for: ${oldName}${oldName !== partner.name ? ` (now ${partner.name})` : ""}`,
+    );
+
+    res.status(200).json({ success: true, data: partner });
+  } catch (error) {
+    console.error("Update Partner Error:", error);
+    res.status(500).json({ success: false, message: "Failed to update partner: " + error.message });
+  }
+};
+
+const deletePartner = async (req, res) => {
+  try {
+    const partner = await Partner.findByPk(req.params.id);
+    if (!partner)
+      return res
+        .status(404)
+        .json({ success: false, message: "Partner not found" });
+    
+    const partnerName = partner.name;
+    await partner.destroy();
+    
+    await logAction(
+      req.user,
+      "DELETE",
+      "Partners",
+      `Removed partner/reference: ${partnerName}`,
+    );
+
+    res.status(200).json({ success: true, message: "Partner removed" });
+  } catch (error) {
+    console.error("Delete Partner Error:", error);
+    res.status(500).json({ success: false, message: "Failed to remove partner: " + error.message });
+  }
+};
+
+const getPublicPartners = async (req, res) => {
+  try {
+    const partners = await Partner.findAll({
+      where: { isActive: true },
+      order: [
+        ["order", "ASC"],
+        ["createdAt", "DESC"],
+      ],
+    });
+    res.status(200).json({ success: true, data: partners });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ success: false, message: "Failed to fetch content" });
   }
 };
 
@@ -2603,6 +2853,7 @@ module.exports = {
   sendContract,
   updateProfile,
   getOfficeLocation,
+  getPublicOfficeLocation,
   getOfficeLocations,
   updateOfficeLocation,
   getTeamMembers,
@@ -2613,4 +2864,9 @@ module.exports = {
   verifyAttendance,
   adminRefresh,
   adminLogout,
+  getPartners,
+  createPartner,
+  updatePartner,
+  deletePartner,
+  getPublicPartners,
 };

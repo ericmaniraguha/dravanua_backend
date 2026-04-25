@@ -1,3 +1,5 @@
+require('dotenv').config();
+
 module.exports = {
   apps: [
     {
@@ -6,8 +8,8 @@ module.exports = {
       instances: "max",
       exec_mode: "cluster",
       env: {
-        NODE_ENV: "production",
-        BACKEND_PORT: 8003
+        NODE_ENV: process.env.NODE_ENV || "production",
+        BACKEND_PORT: process.env.BACKEND_PORT
       },
       env_production: {
         NODE_ENV: "production",
