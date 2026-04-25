@@ -1,12 +1,13 @@
-const { DataTypes } = require('sequelize');
-const { sequelize } = require('../config/db');
+const { DataTypes } = require("sequelize");
 
-const Reminder = sequelize.define('Reminder', {
-  id: {
+module.exports = (sequelize) => {
+  const Reminder = sequelize.define("Reminder", {
+    id: {
       type: DataTypes.UUID,
       defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
       field: 'reminder_id'
+    
     },
   title: {type: DataTypes.STRING(255),
       field: "rem_title",
@@ -99,4 +100,7 @@ const Reminder = sequelize.define('Reminder', {
   timestamps: true
 });
 
-module.exports = Reminder;
+
+
+  return Reminder;
+};

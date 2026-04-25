@@ -1,12 +1,13 @@
-const { DataTypes } = require('sequelize');
-const { sequelize } = require('../config/db');
+const { DataTypes } = require("sequelize");
 
-const MarketingAsset = sequelize.define('MarketingAsset', {
-  id: {
+module.exports = (sequelize) => {
+  const MarketingAsset = sequelize.define("MarketingAsset", {
+    id: {
       type: DataTypes.UUID,
       defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
       field: 'asset_id'
+    
     },
   userId: {
       type: DataTypes.UUID,
@@ -57,4 +58,7 @@ const MarketingAsset = sequelize.define('MarketingAsset', {
   underscored: true
 });
 
-module.exports = MarketingAsset;
+
+
+  return MarketingAsset;
+};

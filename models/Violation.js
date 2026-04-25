@@ -1,13 +1,14 @@
-const { DataTypes } = require('sequelize');
-const { sequelize } = require('../config/db');
-const isSqlite = sequelize.getDialect() === 'sqlite';
+const { DataTypes } = require("sequelize");
 
-const Violation = sequelize.define('Violation', {
-  id: {
+module.exports = (sequelize) => {
+  const isSqlite = sequelize.getDialect() === 'sqlite';
+  const Violation = sequelize.define("Violation", {
+    id: {
       type: DataTypes.UUID,
       defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
       field: 'violation_id'
+    
     },
   userId: {
       type: DataTypes.UUID,
@@ -74,4 +75,7 @@ const Violation = sequelize.define('Violation', {
   updatedAt: false
 });
 
-module.exports = Violation;
+
+
+  return Violation;
+};

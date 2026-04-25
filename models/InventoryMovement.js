@@ -1,12 +1,13 @@
 const { DataTypes } = require("sequelize");
-const { sequelize } = require("../config/db");
 
-const InventoryMovement = sequelize.define("InventoryMovement", {
-  id: {
+module.exports = (sequelize) => {
+  const InventoryMovement = sequelize.define("InventoryMovement", {
+    id: {
     type: DataTypes.UUID,
     defaultValue: DataTypes.UUIDV4,
     primaryKey: true,
-  },
+  
+    },
   itemId: {
     type: DataTypes.UUID,
     allowNull: false,
@@ -47,4 +48,7 @@ const InventoryMovement = sequelize.define("InventoryMovement", {
   timestamps: true,
 });
 
-module.exports = InventoryMovement;
+
+
+  return InventoryMovement;
+};

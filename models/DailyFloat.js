@@ -1,12 +1,13 @@
-const { DataTypes } = require('sequelize');
-const { sequelize } = require('../config/db');
+const { DataTypes } = require("sequelize");
 
-const DailyFloat = sequelize.define('DailyFloat', {
-  id: {
+module.exports = (sequelize) => {
+  const DailyFloat = sequelize.define("DailyFloat", {
+    id: {
       type: DataTypes.UUID,
       defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
       field: 'float_id'
+    
     },
   userId: {
       type: DataTypes.UUID,
@@ -58,4 +59,7 @@ const DailyFloat = sequelize.define('DailyFloat', {
   underscored: true
 });
 
-module.exports = DailyFloat;
+
+
+  return DailyFloat;
+};

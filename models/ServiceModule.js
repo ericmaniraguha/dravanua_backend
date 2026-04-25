@@ -1,12 +1,13 @@
-const { DataTypes } = require('sequelize');
-const { sequelize } = require('../config/db');
+const { DataTypes } = require("sequelize");
 
-const ServiceModule = sequelize.define('ServiceModule', {
-  id: {
+module.exports = (sequelize) => {
+  const ServiceModule = sequelize.define("ServiceModule", {
+    id: {
       type: DataTypes.UUID,
       defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
       field: 'module_id'
+    
     },
   name: {type: DataTypes.STRING,
       field: "sm_name",
@@ -93,4 +94,7 @@ ServiceModule.seedDefaults = async function () {
   }
 };
 
-module.exports = ServiceModule;
+
+
+  return ServiceModule;
+};
