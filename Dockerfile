@@ -1,5 +1,6 @@
-# Use Node.js LTS (Long Term Support) image
-FROM node:18-alpine
+# Define Node Version Argument (defaults to 20.20-alpine if not provided)
+ARG NODE_VERSION=20.20-alpine
+FROM node:${NODE_VERSION}
 
 # Set working directory
 WORKDIR /app

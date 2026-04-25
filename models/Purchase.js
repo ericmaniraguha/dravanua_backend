@@ -1,12 +1,13 @@
-const { DataTypes } = require('sequelize');
-const { sequelize } = require('../config/db');
+const { DataTypes } = require("sequelize");
 
-const Purchase = sequelize.define('Purchase', {
-  id: {
+module.exports = (sequelize) => {
+  const Purchase = sequelize.define("Purchase", {
+    id: {
       type: DataTypes.UUID,
       defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
       field: 'purchase_id'
+    
     },
   userId: {
       type: DataTypes.UUID,
@@ -77,4 +78,7 @@ const Purchase = sequelize.define('Purchase', {
     ],
 });
 
-module.exports = Purchase;
+
+
+  return Purchase;
+};

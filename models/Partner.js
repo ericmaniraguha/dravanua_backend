@@ -1,8 +1,7 @@
 const { DataTypes } = require("sequelize");
-const { sequelize } = require("../config/db");
 
-const Partner = sequelize.define(
-  "Partner",
+module.exports = (sequelize) => {
+  const Partner = sequelize.define("Partner",
   {
     id: {
       type: DataTypes.UUID,
@@ -51,4 +50,7 @@ const Partner = sequelize.define(
   },
 );
 
-module.exports = Partner;
+
+
+  return Partner;
+};

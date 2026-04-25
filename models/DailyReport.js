@@ -1,12 +1,13 @@
-const { DataTypes } = require('sequelize');
-const { sequelize } = require('../config/db');
+const { DataTypes } = require("sequelize");
 
-const DailyReport = sequelize.define('DailyReport', {
-  id: {
+module.exports = (sequelize) => {
+  const DailyReport = sequelize.define("DailyReport", {
+    id: {
       type: DataTypes.UUID,
       defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
       field: 'report_id'
+    
     },
   userId: {
       type: DataTypes.UUID,
@@ -92,4 +93,7 @@ const DailyReport = sequelize.define('DailyReport', {
     ],
 });
 
-module.exports = DailyReport;
+
+
+  return DailyReport;
+};

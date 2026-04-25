@@ -1,12 +1,13 @@
-const { DataTypes } = require('sequelize');
-const { sequelize } = require('../config/db');
+const { DataTypes } = require("sequelize");
 
-const Subscription = sequelize.define('Subscription', {
-  id: {
+module.exports = (sequelize) => {
+  const Subscription = sequelize.define("Subscription", {
+    id: {
       type: DataTypes.UUID,
       defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
       field: 'subscription_id'
+    
     },
   name: {type: DataTypes.STRING,
       field: "sub_name",
@@ -103,4 +104,7 @@ const Subscription = sequelize.define('Subscription', {
   underscored: true
 });
 
-module.exports = Subscription;
+
+
+  return Subscription;
+};

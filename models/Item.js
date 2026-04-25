@@ -1,12 +1,13 @@
 const { DataTypes } = require("sequelize");
-const { sequelize } = require("../config/db");
 
-const Item = sequelize.define("Item", {
-  id: {
+module.exports = (sequelize) => {
+  const Item = sequelize.define("Item", {
+    id: {
     type: DataTypes.UUID,
     defaultValue: DataTypes.UUIDV4,
     primaryKey: true,
-  },
+  
+    },
   name: {
     type: DataTypes.STRING,
     allowNull: false,
@@ -53,4 +54,7 @@ const Item = sequelize.define("Item", {
   timestamps: true,
 });
 
-module.exports = Item;
+
+
+  return Item;
+};
