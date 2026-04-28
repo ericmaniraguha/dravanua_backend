@@ -19,7 +19,7 @@ const transporter = nodemailer.createTransport({
 const sendEmail = async ({ to, subject, text, html }) => {
   try {
     const mailOptions = {
-      from: `"Dravanua Hub" <${process.env.SMTP_FROM}>`,
+      from: `"Dra Vanua Group Ltd" <${process.env.SMTP_FROM}>`,
       to,
       subject,
       text,

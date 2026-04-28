@@ -1,5 +1,5 @@
 /**
- * Subscription Management Routes — DRAVANUA HUB
+ * Subscription Management Routes — DRA VANUA GROUP LTD
  * ─────────────────────────────────────────────────────────────────────────────
  * Full CRUD + deadline alert engine for recurring subscriptions.
  */
@@ -163,13 +163,13 @@ router.post("/send-alert/:id", async (req, res) => {
 
     const result = await sendEmail({
       to: recipientEmail,
-      subject: `[DRAVANUA HUB] Subscription Renewal Alert: ${sub.name}`,
+      subject: `[DRA VANUA GROUP LTD] Subscription Renewal Alert: ${sub.name}`,
       text: `Your subscription "${sub.name}" (${sub.plan || sub.category}) is due on ${sub.nextBillingDate}. Amount: ${Number(sub.cost).toLocaleString()} ${sub.currency}.`,
       html: `
         <div style="font-family:'Inter',sans-serif;max-width:600px;margin:0 auto;border:1px solid #e2e8f0;border-radius:16px;overflow:hidden;">
           <div style="background:linear-gradient(135deg,#32FC05,#2E7D32);padding:24px;color:white;">
             <h2 style="margin:0;font-size:18px;">🔔 Subscription Renewal Alert</h2>
-            <p style="opacity:0.85;margin:8px 0 0;font-size:13px;">DRAVANUA HUB — Financial Operations</p>
+            <p style="opacity:0.85;margin:8px 0 0;font-size:13px;">DRA VANUA GROUP LTD — Financial Operations</p>
           </div>
           <div style="padding:24px;">
             <table style="width:100%;border-collapse:collapse;">
@@ -187,7 +187,7 @@ router.post("/send-alert/:id", async (req, res) => {
             </div>
           </div>
           <div style="background:#f8fafc;padding:14px 24px;border-top:1px solid #e2e8f0;font-size:11px;color:#94a3b8;text-align:center;">
-            Automated alert from DRAVANUA HUB Treasury System
+            Automated alert from DRA VANUA GROUP LTD Treasury System
           </div>
         </div>
       `,

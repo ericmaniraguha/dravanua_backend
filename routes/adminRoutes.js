@@ -137,8 +137,8 @@ router.post("/reports/email", authMiddleware, async (req, res) => {
     
     const result = await sendEmail({
       to,
-      subject: `[DRAVANUA HUB] ${subject}`,
-      text: `Official Communication from DRAVANUA HUB. Scope: ${moduleCode || "DVS"}`,
+      subject: `[DRA VANUA GROUP LTD] ${subject}`,
+      text: `Official Communication from DRA VANUA GROUP LTD. Scope: ${moduleCode || "DVS"}`,
       html: htmlBody,
     });
     

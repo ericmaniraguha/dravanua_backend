@@ -1,6 +1,6 @@
-# ⚙️ DRAVANUA HUB - Backend API
+# ⚙️ DRA VANUA GROUP LTD - Backend API
 
-The backend for DRAVANUA HUB is a robust Node.js/Express server that serves as the central orchestration layer for all business logic, secure authentication, financial intelligence, and database interactions.
+The backend for DRA VANUA GROUP LTD is a robust Node.js/Express server that serves as the central orchestration layer for all business logic, secure authentication, financial intelligence, and database interactions.
 
 ---
 
@@ -70,4 +70,4 @@ We have implemented an aggressive exception-handling layer directly on the model
 - **UUIDv4**: All keys in the database are 128-bit UUIDs, preventing ID enumeration attacks.
 
 ---
-© 2026 DRAVANUA HUB • Backend Engineering
+© 2026 DRA VANUA GROUP LTD • Backend Engineering

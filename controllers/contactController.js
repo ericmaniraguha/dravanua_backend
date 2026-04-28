@@ -43,11 +43,11 @@ const submitContact = async (req, res) => {
     // Send notification email to admin
     await sendEmail({
       to: process.env.SMTP_FROM,
-      subject: `[DRAVANUA HUB] New Contact: ${subject}`,
+      subject: `[DRA VANUA GROUP LTD] New Contact: ${subject}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #eee; border-radius: 10px; overflow: hidden;">
           <div style="background: #32FC05; padding: 20px; text-align: center; color: white;">
-            <h1 style="margin: 0; font-size: 24px;">DRAVANUA HUB</h1>
+            <h1 style="margin: 0; font-size: 24px;">DRA VANUA GROUP LTD</h1>
             <p style="margin: 10px 0 0; font-size: 14px;">New Contact Form Submission</p>
           </div>
           <div style="padding: 30px; line-height: 1.6; color: #333;">
@@ -61,11 +61,11 @@ const submitContact = async (req, res) => {
               ${message}
             </div>
             <hr style="border: none; border-top: 1px solid #eee; margin-top: 24px;" />
-            <p style="color: #64748b; font-size: 13px;">This message was sent via the DRAVANUA HUB website contact form.</p>
+            <p style="color: #64748b; font-size: 13px;">This message was sent via the DRA VANUA GROUP LTD website contact form.</p>
             <p style="color: #64748b; font-size: 13px;">Timestamp: ${new Date().toLocaleString()}</p>
           </div>
           <div style="background: #f4f4f4; padding: 15px; text-align: center; color: #888; font-size: 12px;">
-            DRAVANUA HUB • Here to Create • Kigali, Rwanda
+            DRA VANUA GROUP LTD • Here to Create • Kigali, Rwanda
           </div>
         </div>
       `,
@@ -75,11 +75,11 @@ const submitContact = async (req, res) => {
     // Auto-reply to user: Thank you confirmation
     await sendEmail({
       to: email,
-      subject: `Thank you for contacting DRAVANUA HUB — We've received your message`,
+      subject: `Thank you for contacting DRA VANUA GROUP LTD — We've received your message`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
           <div style="background: linear-gradient(135deg, #32FC05, #2E7D32); padding: 32px; text-align: center; color: white;">
-            <h1 style="margin: 0; font-size: 26px; font-weight: 900; letter-spacing: -0.5px;">DRAVANUA HUB</h1>
+            <h1 style="margin: 0; font-size: 26px; font-weight: 900; letter-spacing: -0.5px;">DRA VANUA GROUP LTD</h1>
             <p style="margin: 8px 0 0; font-size: 14px; opacity: 0.85;">Fine Art, Design & Creative Hub • Kigali</p>
           </div>
 
@@ -103,15 +103,15 @@ const submitContact = async (req, res) => {
             </p>
 
             <p style="margin-top: 24px; font-size: 15px;">Best regards,</p>
-            <p style="margin: 4px 0; font-weight: 700; color: #32FC05;">The DRAVANUA HUB Team</p>
+            <p style="margin: 4px 0; font-weight: 700; color: #32FC05;">The DRA VANUA GROUP LTD Team</p>
           </div>
 
           <div style="background: #f8fafc; padding: 16px; text-align: center; color: #94a3b8; font-size: 12px; border-top: 1px solid #e2e8f0;">
-            DRAVANUA HUB • Kigali, Rwanda • info@dravanuahub.com
+            DRA VANUA GROUP LTD • Kigali, Rwanda • info@dravanuahub.com
           </div>
         </div>
       `,
-      text: `Hi ${name},\n\nThank you for contacting DRAVANUA HUB!\n\nWe have received your message about "${subject}" and will get back to you no later than 24 hours.\n\nBest regards,\nThe DRAVANUA HUB Team\nKigali, Rwanda`,
+      text: `Hi ${name},\n\nThank you for contacting DRA VANUA GROUP LTD!\n\nWe have received your message about "${subject}" and will get back to you no later than 24 hours.\n\nBest regards,\nThe DRA VANUA GROUP LTD Team\nKigali, Rwanda`,
     });
 
     res.status(201).json({
@@ -212,11 +212,11 @@ const replyToMessage = async (req, res) => {
     // Send email to customer
     const result = await sendEmail({
       to: message.senderEmail,
-      subject: `[DRAVANUA HUB] Re: ${message.subject || "Inquiry Response"}`,
+      subject: `[DRA VANUA GROUP LTD] Re: ${message.subject || "Inquiry Response"}`,
       html: `
         <div style="font-family: 'Inter', Arial, sans-serif; max-width: 650px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 25px rgba(0,0,0,0.05);">
           <div style="background: linear-gradient(135deg, #32FC05, #2E7D32); padding: 30px; text-align: center; color: white;">
-            <h1 style="margin: 0; font-size: 26px; font-weight: 900; letter-spacing: -0.5px;">DRAVANUA HUB</h1>
+            <h1 style="margin: 0; font-size: 26px; font-weight: 900; letter-spacing: -0.5px;">DRA VANUA GROUP LTD</h1>
             <p style="margin: 10px 0 0; font-size: 14px; opacity: 0.9;">Professional Correspondence • Kigali, Rwanda</p>
           </div>
           <div style="padding: 40px 35px; line-height: 1.7; color: #1e293b;">
@@ -231,7 +231,7 @@ const replyToMessage = async (req, res) => {
             
             <div style="padding-top: 25px; border-top: 1px solid #f1f5f9;">
               <p style="margin: 0; font-weight: 800; color: #32FC05;">Best Regards,</p>
-              <p style="margin: 4px 0; font-size: 14px; color: #64748b;">The DRAVANUA HUB Operations Team</p>
+              <p style="margin: 4px 0; font-size: 14px; color: #64748b;">The DRA VANUA GROUP LTD Operations Team</p>
             </div>
           </div>
           
@@ -244,12 +244,12 @@ const replyToMessage = async (req, res) => {
           </div>
 
           <div style="background: #f4f4f4; padding: 20px; text-align: center; color: #888; font-size: 11px;">
-            DRAVANUA HUB • Fine Art, Studio & Creative Supplies • Kigali, Rwanda<br/>
+            DRA VANUA GROUP LTD • Fine Art, Studio & Creative Supplies • Kigali, Rwanda<br/>
             +250 788 000 000 • info@dravanua.com
           </div>
         </div>
       `,
-      text: `Hello ${message.senderName},\n\n${replyText}\n\n---\nYour original inquiry about "${message.subject || "something"}" was: "${message.content}"\n\nBest regards,\nDRAVANUA HUB Team`,
+      text: `Hello ${message.senderName},\n\n${replyText}\n\n---\nYour original inquiry about "${message.subject || "something"}" was: "${message.content}"\n\nBest regards,\nDRA VANUA GROUP LTD Team`,
     });
 
     if (!result.success) {

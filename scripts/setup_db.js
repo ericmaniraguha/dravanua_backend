@@ -1,5 +1,5 @@
 /**
- * Dravanua Hub - Database Initialization Utility (MySQL)
+ * Dra Vanua Group Ltd - Database Initialization Utility (MySQL)
  *
  * Works only with MySQL.
  * Performs:

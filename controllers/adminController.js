@@ -367,16 +367,16 @@ const createUser = async (req, res) => {
 
     await sendEmail({
       to: email,
-      subject: "Welcome to DRAVANUA HUB - Complete Your Registration",
+      subject: "Welcome to DRA VANUA GROUP LTD - Complete Your Registration",
       html: `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #eee; border-radius: 10px; overflow: hidden;">
       <div style="background: #32FC05; padding: 20px; text-align: center; color: white;">
-        <h1 style="margin: 0; font-size: 24px;">DRAVANUA HUB</h1>
+        <h1 style="margin: 0; font-size: 24px;">DRA VANUA GROUP LTD</h1>
         <p style="margin: 10px 0 0; font-size: 14px; opacity: 0.9;">Account Activation</p>
       </div>
       <div style="padding: 30px; line-height: 1.6; color: #333;">
         <h2 style="color: #32FC05; margin-top: 0;">Welcome, ${name}!</h2>
-        <p>Thank you for joining DRAVANUA HUB. We're excited to have you on our team!</p>
+        <p>Thank you for joining DRA VANUA GROUP LTD. We're excited to have you on our team!</p>
         
         <p>Your administrative account has been created successfully. To complete your registration and activate your account, please consult your **System Administrator** or **Manager** to receive your unique activation code.</p>
         
@@ -397,7 +397,7 @@ const createUser = async (req, res) => {
             1. Click the button above to open the registration page<br/>
             2. Enter your email and the activation code<br/>
             3. Create a secure password for your account<br/>
-            4. Start using DRAVANUA HUB services
+            4. Start using DRA VANUA GROUP LTD services
           </p>
         </div>
 
@@ -413,15 +413,15 @@ const createUser = async (req, res) => {
         </p>
       </div>
       <div style="background: #f4f4f4; padding: 15px; text-align: center; color: #888; font-size: 12px;">
-        <p style="margin: 5px 0;">DRAVANUA HUB • Here to Create</p>
+        <p style="margin: 5px 0;">DRA VANUA GROUP LTD • Here to Create</p>
         <p style="margin: 5px 0;">Kigali, Rwanda</p>
         <p style="margin: 10px 0 5px; font-size: 11px; color: #aaa;">
-          This is an automated invitation from DRAVANUA HUB.
+          This is an automated invitation from DRA VANUA GROUP LTD.
         </p>
       </div>
     </div>
   `,
-      text: `Welcome to DRAVANUA HUB, ${name}!\n\nYour account has been provisioned. For security reasons, your Activation Code will be shared with you manually by your Manager.\n\nClick here to complete your registration once you have the code: ${signupUrl}\n\nBest regards,\nDRAVANUA HUB Team\nKigali, Rwanda`,
+      text: `Welcome to DRA VANUA GROUP LTD, ${name}!\n\nYour account has been provisioned. For security reasons, your Activation Code will be shared with you manually by your Manager.\n\nClick here to complete your registration once you have the code: ${signupUrl}\n\nBest regards,\nDRA VANUA GROUP LTD Team\nKigali, Rwanda`,
     });
 
     res
@@ -452,11 +452,11 @@ const resendCode = async (req, res) => {
 
     await sendEmail({
       to: user.email,
-      subject: "New Activation Code - DRAVANUA HUB",
+      subject: "New Activation Code - DRA VANUA GROUP LTD",
       html: `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #eee; border-radius: 10px; overflow: hidden;">
       <div style="background: #32FC05; padding: 20px; text-align: center; color: white;">
-        <h1 style="margin: 0; font-size: 24px;">DRAVANUA HUB</h1>
+        <h1 style="margin: 0; font-size: 24px;">DRA VANUA GROUP LTD</h1>
       </div>
       <div style="padding: 30px; line-height: 1.6; color: #333;">
         <h2 style="color: #32FC05; margin-top: 0;">Hello, ${user.name}!</h2>
@@ -473,7 +473,7 @@ const resendCode = async (req, res) => {
         </div>
       </div>
       <div style="background: #f4f4f4; padding: 15px; text-align: center; color: #888; font-size: 12px;">
-        DRAVANUA HUB • Here to Create • Kigali, Rwanda
+        DRA VANUA GROUP LTD • Here to Create • Kigali, Rwanda
       </div>
     </div>
   `,
@@ -498,12 +498,12 @@ const updateUser = async (req, res) => {
     if (req.body.isActive !== undefined && req.body.isActive !== oldStatus) {
       const statusText = req.body.isActive ? "ENABLED" : "DISABLED";
       const detailText = req.body.isActive
-        ? "Your account has been reactivated. You can now access the DRAVANUA HUB system."
+        ? "Your account has been reactivated. You can now access the DRA VANUA GROUP LTD system."
         : "Your account has been disabled or your session has been ended by the administrator. Access is restricted.";
 
       await sendEmail({
         to: user.email,
-        subject: `[DRAVANUA HUB] Account Access Update: ${statusText}`,
+        subject: `[DRA VANUA GROUP LTD] Account Access Update: ${statusText}`,
         html: `
           <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
             <h2 style="color: #2d5a27;">Hello ${user.name},</h2>
@@ -717,7 +717,7 @@ const sendUserActivityReport = async (req, res) => {
         <div style="display: flex; align-items: center; gap: 20px; border-bottom: 3px solid #2d5a27; padding-bottom: 20px;">
           <div style="background: #2d5a27; color: white; width: 60px; height: 60px; border-radius: 12px; display: flex; align-items: center; justifyContent: center; font-weight: bold; font-size: 24px;">DV</div>
           <div>
-            <h1 style="margin: 0; color: #2d5a27;">DRAVANUA HUB</h1>
+            <h1 style="margin: 0; color: #2d5a27;">DRA VANUA GROUP LTD</h1>
             <p style="margin: 0; color: #666;">Executive Performance Intelligence Report</p>
           </div>
         </div>
@@ -793,7 +793,7 @@ const sendUserActivityReport = async (req, res) => {
         </table>
 
         <div style="margin-top: 50px; padding: 20px; background: #fdfdfd; border: 1px dashed #2d5a27; border-radius: 10px;">
-          <p style="margin: 0; font-size: 14px; line-height: 1.6;"><strong>Executive Summary:</strong> This document serves as an official audit of staff performance within the DRAVANUA HUB enterprise system. The data captured above reflects real-time operational contributions and attendance consistency. This report is intended for administrative purposes only.</p>
+          <p style="margin: 0; font-size: 14px; line-height: 1.6;"><strong>Executive Summary:</strong> This document serves as an official audit of staff performance within the DRA VANUA GROUP LTD enterprise system. The data captured above reflects real-time operational contributions and attendance consistency. This report is intended for administrative purposes only.</p>
         </div>
 
         <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #eee; text-align: center; font-size: 11px; color: #aaa;">
@@ -1016,7 +1016,7 @@ const getOfficeLocation = async (req, res) => {
       return res.json({
         success: true,
         data: {
-          office_name: "DRAVANUA HUB",
+          office_name: "DRA VANUA GROUP LTD",
           latitude: -1.9667,
           longitude: 29.9854,
           allowed_radius: 100,
@@ -1039,7 +1039,7 @@ const getPublicOfficeLocation = async (req, res) => {
       return res.json({
         success: true,
         data: {
-          office_name: "DRAVANUA HUB",
+          office_name: "DRA VANUA GROUP LTD",
           latitude: -1.9667,
           longitude: 29.9854,
           address: "Ruyenzi Modern Market",
@@ -2184,17 +2184,17 @@ const forgotPassword = async (req, res) => {
 
     await sendEmail({
       to: email,
-      subject: "Password Reset Code - DRAVANUA HUB",
+      subject: "Password Reset Code - DRA VANUA GROUP LTD",
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #eee; border-radius: 10px; overflow: hidden;">
           <div style="background: #32FC05; padding: 20px; text-align: center; color: white;">
-            <h1 style="margin: 0; font-size: 24px;">DRAVANUA HUB</h1>
+            <h1 style="margin: 0; font-size: 24px;">DRA VANUA GROUP LTD</h1>
             <p style="margin: 10px 0 0; font-size: 14px; opacity: 0.9;">Password Reset Request</p>
           </div>
           
           <div style="padding: 30px; line-height: 1.6; color: #333;">
             <h2 style="color: #32FC05; margin-top: 0;">Hello ${user.name},</h2>
-            <p>We received a request to reset the password for your DRAVANUA HUB account.</p>
+            <p>We received a request to reset the password for your DRA VANUA GROUP LTD account.</p>
             
             <div style="background: #f9f9f9; padding: 20px; border-radius: 8px; margin: 25px 0; text-align: center; border-left: 4px solid #32FC05;">
               <p style="margin: 0 0 10px; font-size: 14px; color: #64748b; font-weight: 600;">🔐 Your Password Reset Code:</p>
@@ -2219,15 +2219,15 @@ const forgotPassword = async (req, res) => {
           </div>
           
           <div style="background: #f4f4f4; padding: 15px; text-align: center; color: #888; font-size: 12px;">
-            <p style="margin: 5px 0;">DRAVANUA HUB • Here to Create</p>
+            <p style="margin: 5px 0;">DRA VANUA GROUP LTD • Here to Create</p>
             <p style="margin: 5px 0;">Kigali, Rwanda</p>
             <p style="margin: 10px 0 5px; font-size: 11px; color: #aaa;">
-              This is an automated security message from DRAVANUA HUB Operations.
+              This is an automated security message from DRA VANUA GROUP LTD Operations.
             </p>
           </div>
         </div>
       `,
-      text: `Hello ${user.name},\n\nYour password reset code is: ${resetCode}\n\nThis code will expire in 15 minutes.\n\nIf you did not request this, please ignore this email.\n\nBest regards,\nDRAVANUA HUB Team\nKigali, Rwanda`,
+      text: `Hello ${user.name},\n\nYour password reset code is: ${resetCode}\n\nThis code will expire in 15 minutes.\n\nIf you did not request this, please ignore this email.\n\nBest regards,\nDRA VANUA GROUP LTD Team\nKigali, Rwanda`,
     });
 
     res.json({ success: true, message: "Reset code sent to your email." });
@@ -2258,11 +2258,11 @@ const resetPassword = async (req, res) => {
     // Send confirmation email
     await sendEmail({
       to: email,
-      subject: "Password Successfully Reset - DRAVANUA HUB",
+      subject: "Password Successfully Reset - DRA VANUA GROUP LTD",
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #eee; border-radius: 10px; overflow: hidden;">
           <div style="background: #32FC05; padding: 20px; text-align: center; color: white;">
-            <h1 style="margin: 0; font-size: 24px;">DRAVANUA HUB</h1>
+            <h1 style="margin: 0; font-size: 24px;">DRA VANUA GROUP LTD</h1>
             <p style="margin: 10px 0 0; font-size: 14px; opacity: 0.9;">Password Reset Confirmation</p>
           </div>
           
@@ -2292,15 +2292,15 @@ const resetPassword = async (req, res) => {
           </div>
           
           <div style="background: #f4f4f4; padding: 15px; text-align: center; color: #888; font-size: 12px;">
-            <p style="margin: 5px 0;">DRAVANUA HUB • Here to Create</p>
+            <p style="margin: 5px 0;">DRA VANUA GROUP LTD • Here to Create</p>
             <p style="margin: 5px 0;">Kigali, Rwanda</p>
             <p style="margin: 10px 0 5px; font-size: 11px; color: #aaa;">
-              This is an automated security confirmation from DRAVANUA HUB.
+              This is an automated security confirmation from DRA VANUA GROUP LTD.
             </p>
           </div>
         </div>
       `,
-      text: `Hello ${user.name},\n\nYour password has been successfully reset.\n\nYou can now log in with your new password.\n\nIf you did not make this change, contact your administrator immediately.\n\nBest regards,\nDRAVANUA HUB Team\nKigali, Rwanda`,
+      text: `Hello ${user.name},\n\nYour password has been successfully reset.\n\nYou can now log in with your new password.\n\nIf you did not make this change, contact your administrator immediately.\n\nBest regards,\nDRA VANUA GROUP LTD Team\nKigali, Rwanda`,
     });
 
     res.json({ success: true, message: "Password updated successfully!" });
@@ -2421,7 +2421,7 @@ const sendContract = async (req, res) => {
     <!-- Header -->
     <div style="background: #32FC05; padding: 30px; color: white; text-align: center;">
       <h1 style="margin: 0; font-size: 24px;">Official Service Agreement</h1>
-      <p style="margin: 10px 0 0; opacity: 0.9; font-size: 14px;">DRAVANUA HUB • Contract ${contractData.contractNumber}</p>
+      <p style="margin: 10px 0 0; opacity: 0.9; font-size: 14px;">DRA VANUA GROUP LTD • Contract ${contractData.contractNumber}</p>
       <p style="margin: 5px 0 0; opacity: 0.8; font-size: 12px;">Date: ${new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</p>
       <p style="margin: 5px 0 0; opacity: 0.8; font-size: 12px;">Classification: CONFIDENTIAL</p>
     </div>
@@ -2511,7 +2511,7 @@ const sendContract = async (req, res) => {
       <!-- Important Notice -->
       <div style="background: #fff3cd; border: 1px solid #ffc107; padding: 15px; border-radius: 8px; margin: 25px 0;">
         <p style="margin: 0; font-size: 13px; color: #856404;">
-          📋 <strong>Document Certification:</strong> This report was automatically generated by the DRAVANUA HUB system on <strong>${new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}</strong>. All data reflects live operational metrics and is intended solely for internal management review. Unauthorised reproduction or distribution is strictly prohibited.
+          📋 <strong>Document Certification:</strong> This report was automatically generated by the DRA VANUA GROUP LTD system on <strong>${new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}</strong>. All data reflects live operational metrics and is intended solely for internal management review. Unauthorised reproduction or distribution is strictly prohibited.
         </p>
       </div>
 
@@ -2537,8 +2537,8 @@ const sendContract = async (req, res) => {
       <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #e2e8f0; text-align: center;">
         <p style="font-size: 12px; color: #64748b; margin: 5px 0;">Report ID: ${contractData.contractNumber}</p>
         <p style="font-size: 12px; color: #64748b; margin: 5px 0;">Generated by ${contractData.generatedBy || "Alice Musayidire"} • service_admin</p>
-        <p style="font-size: 11px; color: #94a3b8; margin: 15px 0 5px;">This is an automated delivery from DRAVANUA HUB Operations Command.</p>
-        <p style="font-size: 11px; color: #94a3b8; margin: 5px 0;">DRAVANUA HUB • Here to Create • Kigali, Rwanda</p>
+        <p style="font-size: 11px; color: #94a3b8; margin: 15px 0 5px;">This is an automated delivery from DRA VANUA GROUP LTD Operations Command.</p>
+        <p style="font-size: 11px; color: #94a3b8; margin: 5px 0;">DRA VANUA GROUP LTD • Here to Create • Kigali, Rwanda</p>
       </div>
     </div>
   </div>

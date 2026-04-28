@@ -1,5 +1,5 @@
 /**
- * Reminder / Schedule / Plan Routes — DRAVANUA HUB
+ * Reminder / Schedule / Plan Routes — DRA VANUA GROUP LTD
  * ─────────────────────────────────────────────────────────────────
  * Full CRUD + broadcast email sender + department-level alert
  */
@@ -250,7 +250,7 @@ router.post("/send-email/:id", async (req, res) => {
     const htmlBody = `
       <div style="font-family: 'Segoe UI', Inter, sans-serif; max-width: 640px; margin: 0 auto; background: #f8fafc;">
         <div style="background: linear-gradient(135deg, #0D3B0D, #32FC05); padding: 28px 32px; border-radius: 16px 16px 0 0;">
-          <div style="color: rgba(255,255,255,0.7); font-size: 11px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 8px;">DRAVANUA HUB — REMINDER ALERT</div>
+          <div style="color: rgba(255,255,255,0.7); font-size: 11px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 8px;">DRA VANUA GROUP LTD — REMINDER ALERT</div>
           <h1 style="color: white; margin: 0; font-size: 22px; font-weight: 900;">${reminder.title}</h1>
           <div style="display: flex; gap: 12px; margin-top: 12px; flex-wrap: wrap;">
             <span style="background: ${priorityBg}; color: ${priorityColor}; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 900;">${reminder.priority} Priority</span>
@@ -282,7 +282,7 @@ router.post("/send-email/:id", async (req, res) => {
           ${reminder.notes ? `<div style="margin-top: 20px; padding: 14px 18px; background: #fffbeb; border-radius: 10px; border: 1px solid #fde68a;"><div style="font-size: 11px; font-weight: 800; color: #92400e; margin-bottom: 6px;">📝 NOTES</div><p style="margin: 0; color: #78350f; font-size: 13px; line-height: 1.6;">${reminder.notes}</p></div>` : ""}
         </div>
         <div style="background: #f8fafc; padding: 16px 32px; border-radius: 0 0 16px 16px; text-align: center; border-top: 1px solid #e2e8f0;">
-          <p style="margin: 0; color: #94a3b8; font-size: 11px; font-weight: 600;">DRAVANUA HUB · Kigali, Rwanda · Confidential Internal Communication</p>
+          <p style="margin: 0; color: #94a3b8; font-size: 11px; font-weight: 600;">DRA VANUA GROUP LTD · Kigali, Rwanda · Confidential Internal Communication</p>
         </div>
       </div>
     `;
@@ -293,7 +293,7 @@ router.post("/send-email/:id", async (req, res) => {
     for (const recip of recipients) {
       const result = await sendEmail({
         to: recip.email,
-        subject: `🔔 [${reminder.priority}] ${reminder.title} — DRAVANUA HUB Reminder`,
+        subject: `🔔 [${reminder.priority}] ${reminder.title} — DRA VANUA GROUP LTD Reminder`,
         html: htmlBody,
       });
       if (result.success) successCount++;

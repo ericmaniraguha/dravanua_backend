@@ -69,7 +69,7 @@ app.use(`${API_PREFIX}/customer`, customerRoutes);
 // API v1 root index
 app.get(API_PREFIX, (req, res) => {
   res.status(200).json({
-    name: process.env.PROJECT_NAME || "DRAVANUA HUB API",
+    name: process.env.PROJECT_NAME || "DRA VANUA GROUP LTD API",
     version: process.env.PROJECT_VERSION || "1.0.0",
     status: "Running",
     endpoints: {
@@ -91,10 +91,41 @@ app.get("/health", (req, res) => {
   res.status(200).json({ status: "ok" });
 });
 
+const redis = require("./utils/redis");
+const { triggerAiTask } = require("./utils/ai_trigger");
+
+app.get(`${API_PREFIX}/test-ai`, async (req, res) => {
+  try {
+    const data = req.query.data || "Test AI Data";
+    const taskId = await triggerAiTask(data);
+    res.status(200).json({ 
+      status: "Task Triggered", 
+      taskId, 
+      message: "Check ai_worker logs for processing results." 
+    });
+  } catch (error) {
+    res.status(500).json({ status: "Error", message: error.message });
+  }
+});
+
 app.get(`${API_PREFIX}/db-check`, async (req, res) => {
   try {
     await sequelize.authenticate();
-    res.status(200).json({ status: "OK", database: "Connected", timestamp: new Date() });
+    
+    let redisStatus = "Disconnected";
+    try {
+      await redis.ping();
+      redisStatus = "Connected";
+    } catch (e) {
+      redisStatus = `Error: ${e.message}`;
+    }
+
+    res.status(200).json({ 
+      status: "OK", 
+      database: "Connected", 
+      redis: redisStatus,
+      timestamp: new Date() 
+    });
   } catch (error) {
     res.status(500).json({ status: "Error", database: "Disconnected", message: error.message });
   }
@@ -107,7 +138,7 @@ const startServer = async () => {
     
     // Ensure database tables exist (Sync models)
     console.log("🔄 Synchronizing database schema...");
-    await sequelize.sync({ alter: true });
+    await sequelize.sync();
     console.log("✅ Database schema is up to date");
 
     // Seed Core Data (Departments)
