@@ -28,7 +28,7 @@ const submitContact = async (req, res) => {
           departmentId = await Department.resolveId("Flower Gifts");
         else if (subject.includes("Fashion"))
           departmentId = await Department.resolveId("Classic Fashion");
-      } catch (e) {}
+      } catch (e) { }
     }
 
     // Save message to database — mapped to normalized Message model fields
@@ -245,7 +245,7 @@ const replyToMessage = async (req, res) => {
 
           <div style="background: #f4f4f4; padding: 20px; text-align: center; color: #888; font-size: 11px;">
             DRA VANUA GROUP LTD • Fine Art, Studio & Creative Supplies • Kigali, Rwanda<br/>
-            +250 788 000 000 • info@dravanua.com
+            +250 788 000 000 • dravanualtd@gmail.com
           </div>
         </div>
       `,
