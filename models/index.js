@@ -35,12 +35,14 @@ const Task = require("./Task")(sequelize);
 const Item = require("./Item")(sequelize);
 const Partner = require("./Partner")(sequelize);
 const InventoryMovement = require("./InventoryMovement")(sequelize);
+const Reference = require("./Reference")(sequelize);
 
 const models = [
   AdminUser, ActivityLog, Attendance, Booking, DailyReport,
   Expense, Purchase, DailyRequest, DailyFloat, MarketingAsset,
   Gallery, Message, Transaction, ReceiptDocument, Subscription,
-  Reminder, Operation, Task, Item, Partner, InventoryMovement
+  Reminder, Operation, Task, Item, Partner, InventoryMovement,
+  Reference, ServiceModule
 ];
 
 // --- ASSOCIATIONS ---
@@ -162,5 +164,6 @@ module.exports = {
   Task,
   Item,
   Partner,
-  InventoryMovement
+  InventoryMovement,
+  Reference
 };

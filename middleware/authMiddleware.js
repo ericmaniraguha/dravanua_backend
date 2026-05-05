@@ -23,14 +23,35 @@ const authMiddleware = (req, res, next) => {
   }
 };
 
+const { AdminUser } = require("../models");
+
 /**
  * Super Admin Authorization Guard
+ * Also supports temporary role delegation (Acting Super Manager)
  */
-const isSuperAdmin = (req, res, next) => {
-  if (req.user && req.user.role === "super_admin") {
-    next();
-  } else {
-    res.status(403).json({ error: "Authorization denied. Super Admin access required." });
+const isSuperAdmin = async (req, res, next) => {
+  try {
+    if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+
+    // 1. Direct role check (fastest)
+    if (req.user.role === "super_admin") return next();
+
+    // 2. Check for temporary delegation in DB
+    const dbUser = await AdminUser.findByPk(req.user.id);
+    if (!dbUser) return res.status(404).json({ error: "User not found" });
+
+    const now = new Date();
+    if (
+      dbUser.delegatedRole === "super_admin" && 
+      dbUser.delegationExpires && 
+      new Date(dbUser.delegationExpires) > now
+    ) {
+      return next();
+    }
+
+    res.status(403).json({ error: "Authorization denied. Super Admin access required (No active delegation found)." });
+  } catch (error) {
+    res.status(500).json({ error: "Internal Authorization Error" });
   }
 };
 

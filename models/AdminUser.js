@@ -118,6 +118,22 @@ module.exports = (sequelize) => {
       allowNull: true,
       comment: "Session refresh token for secure HttpOnly rotation",
     },
+    delegatedRole: {
+      type: DataTypes.ENUM("super_admin", "service_admin"),
+      field: "delegated_role",
+      allowNull: true,
+    },
+    delegationExpires: {
+      type: DataTypes.DATE,
+      field: "delegation_expires",
+      allowNull: true,
+    },
+    delegatedModules: {
+      type: DataTypes.JSON,
+      field: "delegated_modules",
+      allowNull: true,
+      comment: "List of module slugs user can access during delegation",
+    },
   },
   {
     tableName: "admin_users",

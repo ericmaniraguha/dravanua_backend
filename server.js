@@ -14,6 +14,7 @@ const payrollRoutes = require("./routes/payrollRoutes");
 const orgFinanceRoutes = require("./routes/orgFinanceRoutes");
 const subscriptionRoutes = require("./routes/subscriptionRoutes");
 const itemRoutes = require("./routes/itemRoutes");
+const uploadRoutes = require("./routes/uploadRoutes");
 
 const app = express();
 const cookieParser = require("cookie-parser");
@@ -36,6 +37,10 @@ app.use(
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+const fs = require("fs");
+if (!fs.existsSync("uploads")) {
+  fs.mkdirSync("uploads", { recursive: true });
+}
 app.use("/uploads", express.static("uploads"));
 
 // Request Logger
@@ -65,6 +70,7 @@ app.use(
 );
 app.use(`${API_PREFIX}/public`, publicRoutes);
 app.use(`${API_PREFIX}/customer`, customerRoutes);
+app.use(`${API_PREFIX}/admin/uploads`, authMiddleware, uploadRoutes);
 
 // API v1 root index
 app.get(API_PREFIX, (req, res) => {
@@ -138,13 +144,14 @@ const startServer = async () => {
     
     // Ensure database tables exist (Sync models)
     console.log("🔄 Synchronizing database schema...");
-    await sequelize.sync();
+    await sequelize.sync({ alter: true });
     console.log("✅ Database schema is up to date");
 
     // Seed Core Data (Departments)
-    const { AdminUser, Department } = require("./models");
-    console.log("🌱 Verifying core data (Departments)...");
+    const { AdminUser, Department, ServiceModule } = require("./models");
+    console.log("🌱 Verifying core data (Departments & Modules)...");
     await Department.seedDefaults();
+    await ServiceModule.seedDefaults();
     const adminEmail = process.env.ADMIN_EMAIL || "admin@dravanua.com";
     const adminExists = await AdminUser.findOne({ where: { email: adminEmail } });
 
@@ -192,5 +199,14 @@ const startServer = async () => {
     process.exit(1);
   }
 };
+
+// Global Error Handler
+app.use((err, req, res, next) => {
+  console.error(`[ERROR] ${err.stack}`);
+  res.status(err.status || 500).json({
+    success: false,
+    error: err.message || "Internal Server Error",
+  });
+});
 
 startServer();

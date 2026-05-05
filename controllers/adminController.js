@@ -26,6 +26,7 @@ const crypto = require("crypto");
 
 const multer = require("multer");
 const path = require("path");
+const fs = require("fs");
 
 // Multer Config
 const storage = multer.diskStorage({
@@ -2312,11 +2313,34 @@ const resetPassword = async (req, res) => {
 
 const uploadImage = async (req, res) => {
   try {
-    if (!req.file) return res.status(400).json({ error: "No file uploaded" });
-    const url = `${req.protocol}://${req.get("host")}/uploads/${req.file.filename}`;
+    if (!req.file) return res.status(400).json({ success: false, error: "No file uploaded" });
+    
+    const userId = req.user.id;
+    const ext = path.extname(req.file.originalname).toLowerCase();
+    const filename = `employee_${userId}${ext}`;
+    const targetDir = path.resolve("uploads/employees");
+    
+    if (!fs.existsSync(targetDir)) {
+      fs.mkdirSync(targetDir, { recursive: true });
+    }
+    
+    // Remove old versions of this user's profile pic (handles ext changes like .jpg -> .png)
+    const files = fs.readdirSync(targetDir);
+    for (const file of files) {
+      if (file.startsWith(`employee_${userId}.`)) {
+        try { fs.unlinkSync(path.join(targetDir, file)); } catch (e) {}
+      }
+    }
+    
+    const targetPath = path.join(targetDir, filename);
+    // req.file.path is the current path in 'uploads/'
+    fs.renameSync(req.file.path, targetPath);
+    
+    const url = `/uploads/employees/${filename}`;
     res.json({ success: true, url });
   } catch (error) {
-    res.status(500).json({ error: "Upload failed" });
+    console.error("Profile upload error:", error);
+    res.status(500).json({ success: false, error: "Upload processing failed" });
   }
 };
 
