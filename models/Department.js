@@ -45,9 +45,12 @@ module.exports = (sequelize) => {
         { name: "Stationery & Office Supplies", code: "papeterie" },
         { name: "Flower Gifts", code: "flower_gifts" },
         { name: "Classic Fashion", code: "classic_fashion" },
-        { name: "Marketing", code: "marketing" },
-        { name: "Operations Hub", code: "operations_hub" },
-        { name: "General Administration", code: "general" },
+        { name: "Marketing Unit", code: "marketing" },
+        { name: "Operations Unit", code: "operations" },
+        { name: "General Management", code: "management" },
+        { name: "Finance & Accounting", code: "finance" },
+        { name: "Human Resources", code: "hr" },
+        { name: "IT & Digital Support", code: "it" }
       ];
 
       for (const item of defaults) {

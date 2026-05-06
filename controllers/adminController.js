@@ -371,12 +371,12 @@ const createUser = async (req, res) => {
       subject: "Welcome to DRA VANUA GROUP LTD - Complete Your Registration",
       html: `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #eee; border-radius: 10px; overflow: hidden;">
-      <div style="background: #32FC05; padding: 20px; text-align: center; color: white;">
+      <div style="background: #6366f1; padding: 20px; text-align: center; color: white;">
         <h1 style="margin: 0; font-size: 24px;">DRA VANUA GROUP LTD</h1>
         <p style="margin: 10px 0 0; font-size: 14px; opacity: 0.9;">Account Activation</p>
       </div>
       <div style="padding: 30px; line-height: 1.6; color: #333;">
-        <h2 style="color: #32FC05; margin-top: 0;">Welcome, ${name}!</h2>
+        <h2 style="color: #6366f1; margin-top: 0;">Welcome, ${name}!</h2>
         <p>Thank you for joining DRA VANUA GROUP LTD. We're excited to have you on our team!</p>
         
         <p>Your administrative account has been created successfully. To complete your registration and activate your account, please consult your **System Administrator** or **Manager** to receive your unique activation code.</p>
@@ -387,7 +387,7 @@ const createUser = async (req, res) => {
         </div>
 
         <div style="text-align: center; margin: 30px 0;">
-          <a href="${signupUrl}" style="background: #32FC05; color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 15px; display: inline-block; box-shadow: 0 2px 4px rgba(27, 94, 32, 0.2);">
+          <a href="${signupUrl}" style="background: #6366f1; color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 15px; display: inline-block; box-shadow: 0 2px 4px rgba(27, 94, 32, 0.2);">
             Complete Registration
           </a>
         </div>

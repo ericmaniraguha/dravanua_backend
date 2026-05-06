@@ -143,9 +143,16 @@ const startServer = async () => {
     await connectDB();
     
     // Ensure database tables exist (Sync models)
-    console.log("🔄 Synchronizing database schema...");
-    await sequelize.sync({ alter: true });
-    console.log("✅ Database schema is up to date");
+    console.log("🔄 Checking database schema...");
+    const [tables] = await sequelize.query("SHOW TABLES");
+    
+    if (tables.length === 0) {
+      console.log("🔄 Database is empty. Creating tables...");
+      await sequelize.sync();
+      console.log("✅ Database schema created successfully");
+    } else {
+      console.log("✅ Database tables already exist. Skipping creation.");
+    }
 
     // Seed Core Data (Departments)
     const { AdminUser, Department, ServiceModule } = require("./models");

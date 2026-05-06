@@ -107,7 +107,7 @@ const submitContact = async (req, res) => {
           </div>
 
           <div style="background: #f8fafc; padding: 16px; text-align: center; color: #94a3b8; font-size: 12px; border-top: 1px solid #e2e8f0;">
-            DRA VANUA GROUP LTD • Kigali, Rwanda • info@dravanuahub.com
+            DRA VANUA GROUP LTD • Kigali, Rwanda • dravanualtd@gmail.com
           </div>
         </div>
       `,

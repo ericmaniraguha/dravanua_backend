@@ -137,8 +137,8 @@ router.post("/reports/email", authMiddleware, async (req, res) => {
     
     const result = await sendEmail({
       to,
-      subject: `[DRA VANUA GROUP LTD] ${subject}`,
-      text: `Official Communication from DRA VANUA GROUP LTD. Scope: ${moduleCode || "DVS"}`,
+      subject: subject,
+      text: `Communication for ${moduleCode || "DVS"}`,
       html: htmlBody,
     });
     
@@ -146,14 +146,14 @@ router.post("/reports/email", authMiddleware, async (req, res) => {
       // Archive the broadcast in the Message center so it "stays there" for reference
       try {
         await Message.create({
-          senderName: "SYSTEM BROADCAST",
+          senderName: req.user.name ? `${req.user.name} (Broadcast)` : "OUTBOUND BROADCAST",
           senderEmail: req.user.email || "broadcast@dravanuahub.com",
           senderId: req.user.id,
           subject: subject,
-          content: `OUTBOUND BROADCAST:\n\n${htmlBody.replace(/<[^>]*>?/gm, '')}`, // Strip tags for text content
+          content: htmlBody.replace(/<[^>]*>?/gm, ''), // Strip tags for text content
           isRead: true,
-          status: 'replied',
-          replied: true,
+          status: 'delivered',
+          replied: false,
           departmentId: departmentId || null, // Map to specific department if provided
           category: moduleCode || 'Broadcast'
         });
