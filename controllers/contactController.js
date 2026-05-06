@@ -46,18 +46,18 @@ const submitContact = async (req, res) => {
       subject: `[DRA VANUA GROUP LTD] New Contact: ${subject}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #eee; border-radius: 10px; overflow: hidden;">
-          <div style="background: #32FC05; padding: 20px; text-align: center; color: white;">
+          <div style="background: linear-gradient(135deg, #1e3a8a, #3b82f6); padding: 20px; text-align: center; color: white;">
             <h1 style="margin: 0; font-size: 24px;">DRA VANUA GROUP LTD</h1>
             <p style="margin: 10px 0 0; font-size: 14px;">New Contact Form Submission</p>
           </div>
           <div style="padding: 30px; line-height: 1.6; color: #333;">
-            <h2 style="color: #32FC05; margin-top: 0;">New Inquiry Received</h2>
+            <h2 style="color: #1e3a8a; margin-top: 0;">New Inquiry Received</h2>
             <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
             <p><strong>Name:</strong> ${name}</p>
             <p><strong>Email:</strong> ${email}</p>
             <p><strong>Subject:</strong> ${subject}</p>
             <p><strong>Message:</strong></p>
-            <div style="background: #f8fafc; padding: 16px; border-radius: 8px; border-left: 4px solid #32FC05;">
+            <div style="background: #f8fafc; padding: 16px; border-radius: 8px; border-left: 4px solid #3b82f6;">
               ${message}
             </div>
             <hr style="border: none; border-top: 1px solid #eee; margin-top: 24px;" />
@@ -78,22 +78,22 @@ const submitContact = async (req, res) => {
       subject: `Thank you for contacting DRA VANUA GROUP LTD — We've received your message`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
-          <div style="background: linear-gradient(135deg, #32FC05, #2E7D32); padding: 32px; text-align: center; color: white;">
+          <div style="background: linear-gradient(135deg, #1e3a8a, #3b82f6); padding: 32px; text-align: center; color: white;">
             <h1 style="margin: 0; font-size: 26px; font-weight: 900; letter-spacing: -0.5px;">DRA VANUA GROUP LTD</h1>
             <p style="margin: 8px 0 0; font-size: 14px; opacity: 0.85;">Fine Art, Design & Creative Hub • Kigali</p>
           </div>
 
           <div style="padding: 36px 32px; color: #333; line-height: 1.7;">
-            <h2 style="color: #32FC05; margin: 0 0 12px; font-size: 20px;">Thank you, ${name}! 🙏</h2>
+            <h2 style="color: #1e3a8a; margin: 0 0 12px; font-size: 20px;">Thank you, ${name}! 🙏</h2>
             <p style="margin: 0 0 20px; font-size: 15px; color: #475569;">
               We've received your message and are glad you reached out to us.
             </p>
 
-            <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-left: 4px solid #16a34a; border-radius: 8px; padding: 20px; margin: 24px 0;">
-              <p style="margin: 0; font-size: 15px; color: #15803d; font-weight: 600;">
+            <div style="background: #f0f9ff; border: 1px solid #bae6fd; border-left: 4px solid #0284c7; border-radius: 8px; padding: 20px; margin: 24px 0;">
+              <p style="margin: 0; font-size: 15px; color: #0369a1; font-weight: 600;">
                 ✅ Your message has been received successfully.
               </p>
-              <p style="margin: 8px 0 0; font-size: 14px; color: #166534;">
+              <p style="margin: 8px 0 0; font-size: 14px; color: #075985;">
                 One of our team members will get back to you <strong>no later than 24 hours</strong>.
               </p>
             </div>
@@ -103,7 +103,7 @@ const submitContact = async (req, res) => {
             </p>
 
             <p style="margin-top: 24px; font-size: 15px;">Best regards,</p>
-            <p style="margin: 4px 0; font-weight: 700; color: #32FC05;">The DRA VANUA GROUP LTD Team</p>
+            <p style="margin: 4px 0; font-weight: 700; color: #1e3a8a;">The DRA VANUA GROUP LTD Team</p>
           </div>
 
           <div style="background: #f8fafc; padding: 16px; text-align: center; color: #94a3b8; font-size: 12px; border-top: 1px solid #e2e8f0;">
@@ -134,6 +134,7 @@ const getMessages = async (req, res) => {
     if (
       req.user &&
       req.user.role !== "super_admin" &&
+      req.user.role !== "service_admin" &&
       req.user.departmentId &&
       req.user.departmentId !== "all"
     ) {
@@ -215,22 +216,22 @@ const replyToMessage = async (req, res) => {
       subject: `[DRA VANUA GROUP LTD] Re: ${message.subject || "Inquiry Response"}`,
       html: `
         <div style="font-family: 'Inter', Arial, sans-serif; max-width: 650px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 25px rgba(0,0,0,0.05);">
-          <div style="background: linear-gradient(135deg, #32FC05, #2E7D32); padding: 30px; text-align: center; color: white;">
+          <div style="background: linear-gradient(135deg, #1e3a8a, #3b82f6); padding: 30px; text-align: center; color: white;">
             <h1 style="margin: 0; font-size: 26px; font-weight: 900; letter-spacing: -0.5px;">DRA VANUA GROUP LTD</h1>
             <p style="margin: 10px 0 0; font-size: 14px; opacity: 0.9;">Professional Correspondence • Kigali, Rwanda</p>
           </div>
           <div style="padding: 40px 35px; line-height: 1.7; color: #1e293b;">
-            <h2 style="color: #32FC05; margin-top: 0; font-size: 20px; font-weight: 800;">Hello ${message.senderName},</h2>
+            <h2 style="color: #1e3a8a; margin-top: 0; font-size: 20px; font-weight: 800;">Hello ${message.senderName},</h2>
             <p style="font-size: 15px;">Thank you for reaching out to DRAVANUA. Our team has reviewed your inquiry, and here is our response:</p>
             
-            <div style="background: #f8fafc; padding: 25px; border-radius: 12px; margin: 30px 0; border-left: 5px solid #32FC05; color: #334155;">
+            <div style="background: #f8fafc; padding: 25px; border-radius: 12px; margin: 30px 0; border-left: 5px solid #1e3a8a; color: #334155;">
               <p style="margin: 0; white-space: pre-wrap; font-size: 16px;">${replyText}</p>
             </div>
             
             <p style="font-size: 15px; margin-bottom: 30px;">Should you have any further questions or require additional clarification, please feel free to reply directly to this email.</p>
             
             <div style="padding-top: 25px; border-top: 1px solid #f1f5f9;">
-              <p style="margin: 0; font-weight: 800; color: #32FC05;">Best Regards,</p>
+              <p style="margin: 0; font-weight: 800; color: #1e3a8a;">Best Regards,</p>
               <p style="margin: 4px 0; font-size: 14px; color: #64748b;">The DRA VANUA GROUP LTD Operations Team</p>
             </div>
           </div>
