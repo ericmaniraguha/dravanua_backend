@@ -326,7 +326,10 @@ const getUsers = async (req, res) => {
     const users = await AdminUser.findAll({
       where,
       attributes: { exclude: ["password", "confirmationToken"] },
-      include: [{ model: Department, attributes: ["id", "name", "code"] }],
+      include: [
+        { model: Department, attributes: ["id", "name", "code"] },
+        { model: require("../models/index").SalaryStructure, as: 'SalaryStructure' }
+      ],
       order: [
         ["role", "ASC"], // Super admins first
         ["name", "ASC"],
@@ -361,6 +364,15 @@ const createUser = async (req, res) => {
       isEmailConfirmed: false,
       isActive: true,
     });
+
+    // Create Salary Structure if provided
+    if (req.body.salaryStructure) {
+      const { SalaryStructure } = require("../models/index");
+      await SalaryStructure.create({
+        ...req.body.salaryStructure,
+        userId: user.id
+      });
+    }
 
     // Send invitation email
     const frontendUrl = process.env.FRONTEND_URL || "https://dravanua.com";
@@ -531,6 +543,19 @@ const updateUser = async (req, res) => {
         if (teamMember) {
           await teamMember.update({ isHired: false });
         }
+      }
+    }
+
+    // Update Salary Structure if provided
+    if (req.body.salaryStructure) {
+      const { SalaryStructure } = require("../models/index");
+      const [structure, created] = await SalaryStructure.findOrCreate({
+        where: { userId: user.id },
+        defaults: { ...req.body.salaryStructure, userId: user.id }
+      });
+
+      if (!created) {
+        await structure.update(req.body.salaryStructure);
       }
     }
 
@@ -823,9 +848,17 @@ const sendUserActivityReport = async (req, res) => {
 // --- ATTENDANCE CONTROLLERS ---
 const getAttendance = async (req, res) => {
   try {
-    const { date, departmentId } = req.query;
+    const { date, userId, month, year, departmentId } = req.query;
     let where = {};
     if (date) where.date = date;
+    if (userId) where.userId = userId;
+    
+    if (month && year) {
+      const { Op } = require("sequelize");
+      const start = new Date(year, month - 1, 1).toISOString().split('T')[0];
+      const end = new Date(year, month, 0).toISOString().split('T')[0];
+      where.date = { [Op.between]: [start, end] };
+    }
 
     const attendance = await Attendance.findAll({
       where,

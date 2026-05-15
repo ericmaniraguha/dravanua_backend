@@ -15,6 +15,9 @@ const orgFinanceRoutes = require("./routes/orgFinanceRoutes");
 const subscriptionRoutes = require("./routes/subscriptionRoutes");
 const itemRoutes = require("./routes/itemRoutes");
 const uploadRoutes = require("./routes/uploadRoutes");
+const assetRoutes = require("./routes/assetRoutes");
+const treasuryRoutes = require("./routes/treasuryRoutes");
+const gpsAttendanceRoutes = require("./routes/gpsAttendanceRoutes");
 
 const app = express();
 const cookieParser = require("cookie-parser");
@@ -71,6 +74,9 @@ app.use(
 app.use(`${API_PREFIX}/public`, publicRoutes);
 app.use(`${API_PREFIX}/customer`, customerRoutes);
 app.use(`${API_PREFIX}/admin/uploads`, authMiddleware, uploadRoutes);
+app.use(`${API_PREFIX}/admin/assets`, authMiddleware, assetRoutes);
+app.use(`${API_PREFIX}/admin/treasury`, treasuryRoutes);
+app.use(`${API_PREFIX}/admin/attendance`, gpsAttendanceRoutes);
 
 // API v1 root index
 app.get(API_PREFIX, (req, res) => {
@@ -154,11 +160,13 @@ const startServer = async () => {
       console.log("✅ Database tables already exist. Skipping creation.");
     }
 
-    // Seed Core Data (Departments)
-    const { AdminUser, Department, ServiceModule } = require("./models");
-    console.log("🌱 Verifying core data (Departments & Modules)...");
+    // Seed Core Data (Departments, Modules, Assets)
+    const { AdminUser, Department, ServiceModule, AssetCategory, MessageTemplate } = require("./models");
+    console.log("🌱 Verifying core data (Departments, Modules, Assets)...");
     await Department.seedDefaults();
     await ServiceModule.seedDefaults();
+    await AssetCategory.seedDefaults();
+    await MessageTemplate.seedDefaults();
     const adminEmail = process.env.ADMIN_EMAIL || "admin@dravanua.com";
     const adminExists = await AdminUser.findOne({ where: { email: adminEmail } });
 

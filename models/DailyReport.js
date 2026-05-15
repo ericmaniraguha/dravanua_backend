@@ -36,12 +36,23 @@ module.exports = (sequelize) => {
     field: 'payment_account'
   },
   notes: DataTypes.TEXT,
+  discount: {
+    type: DataTypes.DECIMAL(12, 2),
+    defaultValue: 0,
+    field: 'total_discount'
+  },
   sin: DataTypes.STRING,
   date: {
     type: DataTypes.DATEONLY,
     field: "dr_date"
   },
   service: DataTypes.STRING,
+  itemId: {
+    type: DataTypes.UUID,
+    field: 'item_id',
+    allowNull: true,
+    references: { model: 'items', key: 'id' }
+  },
   quantity: DataTypes.INTEGER,
   unitPrice: {
     type: DataTypes.DECIMAL(12, 2),

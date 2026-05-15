@@ -669,6 +669,74 @@ router.get("/stats", authMiddleware, async (req, res) => {
 });
 
 /**
+ * GET /api/v1/attendance/summary
+ * Returns aggregated attendance KPIs per user for a date range
+ */
+router.get("/summary", authMiddleware, async (req, res) => {
+  try {
+    if (!isAdmin(req.user)) {
+      return res.status(403).json({ success: false, message: "Unauthorized", code: "UNAUTHORIZED" });
+    }
+
+    const { start, end } = req.query;
+    if (!start || !end) {
+      return res.status(400).json({ success: false, message: "Start and end dates are required" });
+    }
+
+    const { AdminUser } = require("../models");
+    const users = await AdminUser.findAll({
+      attributes: ['id', 'name', 'role'],
+      where: { isActive: true }
+    });
+
+    const attendance = await AttendanceModel.findAll({
+      where: {
+        date: { [Op.between]: [start, end] },
+        status: 'completed'
+      }
+    });
+
+    const summary = users.map(user => {
+      const userAtt = attendance.filter(a => a.userId === user.id);
+      const verifiedCount = userAtt.length;
+      
+      let totalCheckInMs = 0;
+      let earlyCount = 0;
+      
+      userAtt.forEach(a => {
+        const checkIn = new Date(a.clockIn);
+        const timeStr = checkIn.getHours().toString().padStart(2, '0') + ':' + checkIn.getMinutes().toString().padStart(2, '0');
+        totalCheckInMs += (checkIn.getHours() * 3600000) + (checkIn.getMinutes() * 60000);
+        
+        // Threshold 09:00 AM
+        if (checkIn.getHours() < 9 || (checkIn.getHours() === 9 && checkIn.getMinutes() === 0)) {
+          earlyCount++;
+        }
+      });
+
+      const avgMs = verifiedCount > 0 ? totalCheckInMs / verifiedCount : 0;
+      const avgHours = Math.floor(avgMs / 3600000);
+      const avgMins = Math.floor((avgMs % 3600000) / 60000);
+      const avgCheckIn = verifiedCount > 0 ? `${avgHours.toString().padStart(2, '0')}:${avgMins.toString().padStart(2, '0')}` : null;
+
+      return {
+        userId: user.id,
+        name: user.name,
+        role: user.role,
+        verifiedCount,
+        avgCheckIn,
+        earlyRate: verifiedCount > 0 ? (earlyCount / verifiedCount) * 100 : 0
+      };
+    });
+
+    res.json({ success: true, data: summary });
+  } catch (error) {
+    console.error("❌ Fetch summary error:", error.message);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
  * GET /api/v1/attendance/violations
  * ✅ FIX #5: Use isAdmin utility
  */

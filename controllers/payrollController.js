@@ -107,8 +107,18 @@ exports.generatePayroll = async (req, res) => {
   try {
     const { month, year } = req.body;
     
-    const existing = await PayrollRecord.count({ where: { month, year } });
-    if (existing > 0) return res.status(400).json({ success: false, error: "Payroll for this period already exists" });
+    // Allow re-generation if records are still PENDING
+    const existingCount = await PayrollRecord.count({ where: { month, year } });
+    const paidCount = await PayrollRecord.count({ where: { month, year, status: 'Paid' } });
+
+    if (paidCount > 0) {
+      return res.status(400).json({ success: false, error: "Cannot re-generate. Some staff members have already been paid for this period." });
+    }
+
+    if (existingCount > 0) {
+      // Clean up previous pending records to re-calculate everything
+      await PayrollRecord.destroy({ where: { month, year, status: { [Op.ne]: 'Paid' } }, transaction: t });
+    }
 
     const staff = await AdminUser.findAll({
       where: { isActive: true },
@@ -228,6 +238,56 @@ exports.updateStatus = async (req, res) => {
     res.json({ success: true, data: record });
   } catch (error) {
     await t.rollback();
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+exports.getAttendanceSummary = async (req, res) => {
+  try {
+    const { start, end } = req.query;
+    const where = { isVerified: true };
+    if (start && end) {
+      where.date = { [Op.between]: [start, end] };
+    }
+
+    const summary = await Attendance.findAll({
+      where,
+      attributes: [
+        'userId',
+        'userName',
+        [fn('COUNT', col('attendance_id')), 'verifiedCount'],
+        [fn('AVG', col('total_hours')), 'avgHours'],
+        [sequelize.literal("AVG(HOUR(clock_in) * 60 + MINUTE(clock_in))"), 'avgMinutes'],
+        [sequelize.literal("SUM(CASE WHEN TIME(clock_in) < '08:30:00' THEN 1 ELSE 0 END) / COUNT(attendance_id) * 100"), 'earlyRate']
+      ],
+      include: [{ 
+        model: AdminUser, 
+        as: 'AdminUser',
+        attributes: ['role'] 
+      }],
+      group: ['userId', 'userName', 'AdminUser.user_id', 'AdminUser.role'],
+      order: [[fn('COUNT', col('attendance_id')), 'DESC']]
+    });
+
+    const data = summary.map(s => {
+      const avgMins = Math.round(s.get('avgMinutes') || 0);
+      const h = Math.floor(avgMins / 60).toString().padStart(2, '0');
+      const m = (avgMins % 60).toString().padStart(2, '0');
+
+      return {
+        userId: s.userId,
+        name: s.userName,
+        role: s.AdminUser?.role || 'Staff',
+        verifiedCount: parseInt(s.get('verifiedCount')) || 0,
+        avgHours: parseFloat(s.get('avgHours') || 0).toFixed(1),
+        earlyRate: parseFloat(s.get('earlyRate') || 0).toFixed(1),
+        avgCheckIn: `${h}:${m}`
+      };
+    });
+
+    res.json({ success: true, data });
+  } catch (error) {
+    console.error("Attendance Summary Error:", error);
     res.status(500).json({ success: false, error: error.message });
   }
 };

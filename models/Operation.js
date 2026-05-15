@@ -21,7 +21,7 @@ module.exports = (sequelize) => {
       allowNull: true,
     },
     priority: {
-      type: DataTypes.ENUM("Low", "Medium", "High"),
+      type: DataTypes.ENUM("Low", "Medium", "High", "Urgent"),
       defaultValue: "Medium",
     },
     startTime: {

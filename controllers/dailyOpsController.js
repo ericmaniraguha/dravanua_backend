@@ -111,8 +111,14 @@ module.exports = {
         }
         const data = await DailyReport.create(body, { transaction: t });
 
-        // Update Inventory if item exists
-        const item = await Item.findOne({ where: { name: body.service } });
+        // Update Inventory
+        let item = null;
+        if (body.itemId) {
+          item = await Item.findByPk(body.itemId);
+        } else {
+          item = await Item.findOne({ where: { name: body.service } });
+        }
+
         if (item) {
           item.currentStock = parseFloat(item.currentStock) - parseFloat(body.quantity || 1);
           await item.save({ transaction: t });
@@ -124,7 +130,7 @@ module.exports = {
             reason: 'Sale',
             referenceId: data.id,
             recordedBy: req.user?.name || 'System',
-            departmentId: body.departmentId
+            departmentId: body.departmentId || item.departmentId
           }, { transaction: t });
         }
 

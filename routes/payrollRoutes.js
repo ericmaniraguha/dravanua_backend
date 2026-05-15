@@ -10,6 +10,7 @@ router.get("/structures", payrollController.getSalaryStructures);
 router.post("/structures", payrollController.updateSalaryStructure);
 
 router.get("/records", payrollController.getPayrollRecords);
+router.get("/attendance/summary", payrollController.getAttendanceSummary);
 router.post("/generate", payrollController.generatePayroll);
 router.patch("/records/:id", payrollController.updateStatus);
 

@@ -80,6 +80,11 @@ ServiceModule.seedDefaults = async function () {
         name: "Classic Fashion Styling",
         description: "High-end fashion coordination and event styling services.",
       },
+      {
+        slug: "assets",
+        name: "Assets Management",
+        description: "Organization-wide equipment tracking and maintenance.",
+      },
     ];
 
     for (const mod of modules) {

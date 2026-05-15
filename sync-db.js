@@ -33,6 +33,12 @@ async function syncDatabase() {
       console.log("⚠️ Department seed method not found");
     }
 
+    const AssetCategory = sequelize.models.AssetCategory;
+    if (AssetCategory && AssetCategory.seedDefaults) {
+      console.log("🌱 Seeding asset categories...");
+      await AssetCategory.seedDefaults();
+    }
+
     // 6. Create super admin safely
     const AdminUser = sequelize.models.AdminUser;
 

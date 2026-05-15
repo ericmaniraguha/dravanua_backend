@@ -81,6 +81,11 @@ module.exports = (sequelize) => {
       field: "profile_picture",
       allowNull: true,
     },
+    phoneNumber: {
+      type: DataTypes.STRING,
+      field: "phone_number",
+      allowNull: true,
+    },
     
     staffCode: {
       type: DataTypes.STRING,
@@ -133,6 +138,12 @@ module.exports = (sequelize) => {
       field: "delegated_modules",
       allowNull: true,
       comment: "List of module slugs user can access during delegation",
+    },
+    hiredDate: {
+      type: DataTypes.DATE,
+      field: "hired_date",
+      allowNull: true,
+      defaultValue: DataTypes.NOW,
     },
   },
   {

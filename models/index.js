@@ -36,13 +36,24 @@ const Item = require("./Item")(sequelize);
 const Partner = require("./Partner")(sequelize);
 const InventoryMovement = require("./InventoryMovement")(sequelize);
 const Reference = require("./Reference")(sequelize);
+const AssetCategory = require("./AssetCategory")(sequelize);
+const Asset = require("./Asset")(sequelize);
+const AssetMaintenance = require("./AssetMaintenance")(sequelize);
+const AssetTransfer = require("./AssetTransfer")(sequelize);
+const AssetAssignment = require("./AssetAssignment")(sequelize);
+const AssetInventory = require("./AssetInventory")(sequelize);
+const MessageTemplate = require("./MessageTemplate")(sequelize);
+const TreasuryPosition = require("./TreasuryPosition")(sequelize);
+
 
 const models = [
   AdminUser, ActivityLog, Attendance, Booking, DailyReport,
   Expense, Purchase, DailyRequest, DailyFloat, MarketingAsset,
   Gallery, Message, Transaction, ReceiptDocument, Subscription,
   Reminder, Operation, Task, Item, Partner, InventoryMovement,
-  Reference, ServiceModule
+  Reference, ServiceModule, AssetCategory, Asset, AssetMaintenance,
+  AssetTransfer, AssetAssignment, AssetInventory, MessageTemplate, TreasuryPosition
+
 ];
 
 // --- ASSOCIATIONS ---
@@ -130,6 +141,51 @@ Customer.hasMany(Booking, { foreignKey: 'customer_id' });
 Item.hasMany(InventoryMovement, { foreignKey: 'itemId' });
 InventoryMovement.belongsTo(Item, { foreignKey: 'itemId' });
 
+// --- ASSET MODULE ASSOCIATIONS ---
+
+// Asset <-> Category
+Asset.belongsTo(AssetCategory, { foreignKey: 'category_id' });
+AssetCategory.hasMany(Asset, { foreignKey: 'category_id' });
+
+// Asset <-> Department
+Asset.belongsTo(Department, { foreignKey: 'department_id' });
+Department.hasMany(Asset, { foreignKey: 'department_id' });
+
+// Asset <-> AdminUser (Assigned To)
+Asset.belongsTo(AdminUser, { as: 'Assignee', foreignKey: 'assigned_to' });
+Asset.belongsTo(AdminUser, { as: 'Recorder', foreignKey: 'recorded_by' });
+Asset.belongsTo(AdminUser, { as: 'Modifier', foreignKey: 'modified_by' });
+AdminUser.hasMany(Asset, { foreignKey: 'assigned_to' });
+
+// Asset Maintenance
+Asset.hasMany(AssetMaintenance, { foreignKey: 'asset_id' });
+AssetMaintenance.belongsTo(Asset, { foreignKey: 'asset_id' });
+AssetMaintenance.belongsTo(AdminUser, { as: 'Recorder', foreignKey: 'recorded_by' });
+AssetMaintenance.belongsTo(AdminUser, { as: 'Modifier', foreignKey: 'modified_by' });
+
+// Asset Transfers
+Asset.hasMany(AssetTransfer, { foreignKey: 'asset_id' });
+AssetTransfer.belongsTo(Asset, { foreignKey: 'asset_id' });
+AssetTransfer.belongsTo(Department, { as: 'FromDepartment', foreignKey: 'from_department_id' });
+AssetTransfer.belongsTo(Department, { as: 'ToDepartment', foreignKey: 'to_department_id' });
+AssetTransfer.belongsTo(AdminUser, { as: 'Requester', foreignKey: 'requested_by' });
+AssetTransfer.belongsTo(AdminUser, { as: 'Approver', foreignKey: 'approved_by' });
+AssetTransfer.belongsTo(AdminUser, { as: 'Recorder', foreignKey: 'recorded_by' });
+AssetTransfer.belongsTo(AdminUser, { as: 'Modifier', foreignKey: 'modified_by' });
+
+// Asset Assignments
+Asset.hasMany(AssetAssignment, { foreignKey: 'asset_id' });
+AssetAssignment.belongsTo(Asset, { foreignKey: 'asset_id' });
+AssetAssignment.belongsTo(AdminUser, { as: 'Employee', foreignKey: 'employee_id' });
+
+// Asset Inventory
+Asset.hasOne(AssetInventory, { foreignKey: 'asset_id' });
+AssetInventory.belongsTo(Asset, { foreignKey: 'asset_id' });
+
+// Category <-> Department
+AssetCategory.belongsTo(Department, { foreignKey: 'department_id' });
+Department.hasMany(AssetCategory, { foreignKey: 'department_id' });
+
 module.exports = {
   AdminUser,
   ActivityLog,
@@ -165,5 +221,14 @@ module.exports = {
   Item,
   Partner,
   InventoryMovement,
-  Reference
+  Reference,
+  AssetCategory,
+  Asset,
+  AssetMaintenance,
+  AssetTransfer,
+  AssetAssignment,
+  AssetInventory,
+  MessageTemplate,
+  TreasuryPosition
 };
+

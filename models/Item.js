@@ -48,6 +48,28 @@ module.exports = (sequelize) => {
   unit: {
     type: DataTypes.STRING,
     defaultValue: 'pcs', // Default to pieces
+  },
+  itemCode: {
+    type: DataTypes.STRING,
+    unique: true,
+    allowNull: true,
+    field: 'item_code'
+  },
+  brand: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  model: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  supplier: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  status: {
+    type: DataTypes.STRING,
+    defaultValue: 'Active'
   }
 }, {
   tableName: 'items',

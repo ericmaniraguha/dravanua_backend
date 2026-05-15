@@ -38,7 +38,7 @@ module.exports = (sequelize) => {
       field: 'deductions'
     },
     paymentCycle: {
-      type: DataTypes.ENUM('Monthly', 'Weekly', 'Daily'),
+      type: DataTypes.ENUM('Monthly', 'Weekly', 'Daily', 'Hourly'),
       defaultValue: 'Monthly',
       field: 'payment_cycle'
     },
